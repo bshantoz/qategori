@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>土木 練習問題 100問 — Kuis</title>
+<style>
+:root {
+  --bg: #e9edf1;
+  --card: #ffffff;
+  --ink: #16212c;
+  --ink-soft: #55626f;
+  --line: #cdd5dd;
+  --accent: #1f4e8c;
+  --accent-ink: #ffffff;
+  --ok: #1d8a4c;
+  --ok-bg: #dff3e6;
+  --ng: #c62f2a;
+  --ng-bg: #fbe2e0;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10161d;
+    --card: #1a232d;
+    --ink: #e8edf2;
+    --ink-soft: #9aa7b4;
+    --line: #2f3c49;
+    --accent: #6ea3e8;
+    --accent-ink: #0b1622;
+    --ok: #52c98a;
+    --ok-bg: #163a29;
+    --ng: #ff7a72;
+    --ng-bg: #4a1e1c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10161d;
+  --card: #1a232d;
+  --ink: #e8edf2;
+  --ink-soft: #9aa7b4;
+  --line: #2f3c49;
+  --accent: #6ea3e8;
+  --accent-ink: #0b1622;
+  --ok: #52c98a;
+  --ok-bg: #163a29;
+  --ng: #ff7a72;
+  --ng-bg: #4a1e1c;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+main { max-width: 640px; margin: 0 auto; padding: 16px 16px 40px; }
+h1 { font-size: 1.5rem; margin: 8px 0 4px; line-height: 1.3; }
+.sub { color: var(--ink-soft); margin: 0 0 20px; font-size: .95rem; }
+button { font: inherit; color: inherit; }
+.hidden { display: none !important; }
+
+/* start */
+.menu { display: grid; gap: 10px; margin: 16px 0; }
+.mode {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; text-align: left; padding: 16px; border-radius: 12px;
+  background: var(--card); border: 2px solid var(--line); cursor: pointer;
+}
+.mode:hover, .mode:focus-visible { border-color: var(--accent); outline: none; }
+.mode b { font-size: 1.05rem; display: block; }
+.mode small { color: var(--ink-soft); }
+.mode .cnt { font-size: 1.4rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.opts-row { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 8px 0 0; color: var(--ink-soft); font-size: .95rem; }
+.opts-row label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; min-height: 32px; }
+.opts-row input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* quiz */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding: 8px 0 10px; z-index: 2; }
+.stat { display: flex; justify-content: space-between; align-items: baseline; font-size: .95rem; color: var(--ink-soft); }
+.stat strong { color: var(--ink); }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 16px; margin-top: 8px; }
+.tag { font-size: .8rem; color: var(--accent); margin: 0 0 8px; }
+.q-jp { font-size: 1.15rem; font-weight: 600; margin: 0; line-height: 1.6; }
+.q-ro { font-size: .85rem; font-style: italic; color: var(--ink-soft); margin: 6px 0 0; line-height: 1.5; }
+.choices { display: grid; gap: 10px; margin-top: 16px; }
+.choice {
+  display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left;
+  padding: 12px; border-radius: 10px; border: 2px solid var(--line);
+  background: var(--card); cursor: pointer; min-height: 54px;
+}
+.choice:hover:not(:disabled) { border-color: var(--accent); }
+.choice:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.choice .ltr {
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 700; font-size: .9rem;
+  background: var(--bg); border: 1px solid var(--line);
+}
+.choice .txt { flex: 1; min-width: 0; }
+.choice .jp { display: block; font-size: 1rem; }
+.choice .ro { display: block; font-size: .8rem; font-style: italic; color: var(--ink-soft); line-height: 1.4; margin-top: 2px; }
+.choice:disabled { cursor: default; }
+.choice.ok { border-color: var(--ok); background: var(--ok-bg); }
+.choice.ok .ltr { background: var(--ok); border-color: var(--ok); color: #fff; }
+.choice.ng { border-color: var(--ng); background: var(--ng-bg); }
+.choice.ng .ltr { background: var(--ng); border-color: var(--ng); color: #fff; }
+.choice.dim { opacity: .55; }
+.fb { margin-top: 14px; padding: 12px; border-radius: 10px; font-size: .95rem; }
+.fb.ok { background: var(--ok-bg); border-left: 5px solid var(--ok); }
+.fb.ng { background: var(--ng-bg); border-left: 5px solid var(--ng); }
+.fb b { display: block; margin-bottom: 2px; }
+.fb.ok b { color: var(--ok); }
+.fb.ng b { color: var(--ng); }
+.actions { display: flex; gap: 10px; margin-top: 16px; }
+.btn {
+  flex: 1; padding: 14px 16px; border-radius: 10px; border: 2px solid var(--accent);
+  background: var(--accent); color: var(--accent-ink); font-weight: 700; cursor: pointer; min-height: 50px;
+}
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.linkbtn { background: none; border: 0; color: var(--ink-soft); text-decoration: underline; cursor: pointer; padding: 6px 0; font-size: .9rem; }
+
+/* result */
+.score { text-align: center; padding: 20px 8px 8px; }
+.score .big { font-size: 3.4rem; font-weight: 800; line-height: 1.1; }
+.score .big.good { color: var(--ok); }
+.score .big.bad { color: var(--ng); }
+.score p { margin: 6px 0; color: var(--ink-soft); }
+.review { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.review li { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--ng); border-radius: 10px; padding: 12px; }
+.review .rq { font-weight: 600; margin: 0; }
+.review .rr { font-size: .8rem; font-style: italic; color: var(--ink-soft); margin: 2px 0 6px; }
+.review .ra { margin: 0; color: var(--ok); font-weight: 600; font-size: .95rem; }
+.review .rm { margin: 2px 0 0; font-size: .85rem; color: var(--ink-soft); }
+.allok { text-align: center; padding: 16px; border-radius: 12px; background: var(--ok-bg); color: var(--ok); font-weight: 700; margin-top: 12px; }
+.no-ro .q-ro, .no-ro .choice .ro, .no-ro .review .rr { display: none; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<main id="app">
+
+<section id="start">
+  <h1>土木 練習問題 100問</h1>
+  <p class="sub">Doboku renshū mondai — kuis latihan. Jawaban benar berwarna hijau, salah berwarna merah.</p>
+  <div class="menu">
+    <button class="mode" data-mode="all"><span><b>全問 (Zenmon) — Semua soal</b><small>Teori + praktik</small></span><span class="cnt">100</span></button>
+    <button class="mode" data-mode="riron"><span><b>理論 (Riron) — Teori</b><small>Soal 1–60</small></span><span class="cnt">60</span></button>
+    <button class="mode" data-mode="jitsugi"><span><b>実技 (Jitsugi) — Praktik</b><small>Soal 61–100</small></span><span class="cnt">40</span></button>
+  </div>
+  <div class="opts-row">
+    <label><input type="checkbox" id="optShuffle"> Acak urutan soal</label>
+    <label><input type="checkbox" id="optRomaji" checked> Tampilkan romaji</label>
+  </div>
+</section>
+
+<section id="quiz" class="hidden">
+  <div class="top">
+    <div class="stat"><span id="pos">1 / 100</span><span>Benar: <strong id="okc">0</strong> · Salah: <strong id="ngc">0</strong></span></div>
+    <div class="bar"><i id="barfill"></i></div>
+  </div>
+  <div class="card">
+    <p class="tag" id="tag"></p>
+    <p class="q-jp" id="qjp"></p>
+    <p class="q-ro" id="qro"></p>
+    <div class="choices" id="choices"></div>
+    <div id="fb" class="fb hidden" role="status" aria-live="polite"></div>
+    <div class="actions">
+      <button class="btn" id="next" disabled>Lanjut</button>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:10px"><button class="linkbtn" id="quit">Berhenti dan kembali ke menu</button></p>
+</section>
+
+<section id="result" class="hidden">
+  <div class="score">
+    <div class="big" id="rbig">0</div>
+    <p id="rsub"></p>
+  </div>
+  <div class="actions">
+    <button class="btn" id="retryWrong">Ulangi yang salah</button>
+    <button class="btn ghost" id="restart">Menu</button>
+  </div>
+  <div id="reviewWrap"></div>
+</section>
+
+</main>
+
+<script>
+const DATA = [{"n": 1, "jp": "日本の建設現場で一番大切にしていることは何ですか。", "ro": "Nihon no kensetsu genba de ichiban taisetsu ni shite iru koto wa nan desu ka.", "opts": [{"l": "A", "jp": "工期を短くすること", "ro": "kōki o mijikaku suru koto"}, {"l": "B", "jp": "事故を防ぐこと", "ro": "jiko o fusegu koto"}, {"l": "C", "jp": "費用を安くすること", "ro": "hiyō o yasuku suru koto"}, {"l": "D", "jp": "早く帰ること", "ro": "hayaku kaeru koto"}], "sec": "第1章 日本の現場で大切にしていること", "a": "B", "note": "Yang terpenting di lokasi: mencegah kecelakaan", "part": "riron"}, {"n": 2, "jp": "工事全体をまとめる会社を、通称何と呼びますか。", "ro": "Kōji zentai o matomeru kaisha o, tsūshō nan to yobimasu ka.", "opts": [{"l": "A", "jp": "設計者", "ro": "sekkeisha"}, {"l": "B", "jp": "監理者", "ro": "kanrisha"}, {"l": "C", "jp": "ゼネコン", "ro": "zenekon"}, {"l": "D", "jp": "職長", "ro": "shokuchō"}], "sec": "第1章 日本の現場で大切にしていること", "a": "C", "note": "Perusahaan pengelola seluruh proyek = ゼネコン", "part": "riron"}, {"n": 3, "jp": "工事が図面通りに行われているかどうかを確認する立場の技術者は誰ですか。", "ro": "Kōji ga zumen dōri ni okonawarete iru ka dō ka o kakunin suru tachiba no gijutsusha wa dare desu ka.", "opts": [{"l": "A", "jp": "発注者", "ro": "hatchūsha"}, {"l": "B", "jp": "設計者", "ro": "sekkeisha"}, {"l": "C", "jp": "監理者", "ro": "kanrisha"}, {"l": "D", "jp": "職長", "ro": "shokuchō"}], "sec": "第1章 日本の現場で大切にしていること", "a": "C", "note": "監理者 memeriksa apakah pekerjaan sesuai gambar", "part": "riron"}, {"n": 4, "jp": "建設キャリアアップシステムでは、技能者のレベルはいくつに分けられていますか。", "ro": "Kensetsu kyaria appu shisutemu de wa, ginōsha no reberu wa ikutsu ni wakerarete imasu ka.", "opts": [{"l": "A", "jp": "2つ", "ro": "futatsu"}, {"l": "B", "jp": "4つ", "ro": "yottsu"}, {"l": "C", "jp": "3つ", "ro": "mittsu"}, {"l": "D", "jp": "5つ", "ro": "itsutsu"}], "sec": "第1章 日本の現場で大切にしていること", "a": "B", "note": "Level CCUS ada 4", "part": "riron"}, {"n": 5, "jp": "建設キャリアアップシステムで、技能者の評価の対象にならないものはどれですか。", "ro": "Kensetsu kyaria appu shisutemu de, ginōsha no hyōka no taishō ni naranai mono wa dore desu ka.", "opts": [{"l": "A", "jp": "経験（就業日数）(keiken / shūgyō nissū)", "ro": ""}, {"l": "B", "jp": "知識・技能（保有資格）(chishiki・ginō / hoyū shikaku)", "ro": ""}, {"l": "C", "jp": "マネジメント能力", "ro": "manejimento nōryoku"}, {"l": "D", "jp": "国籍", "ro": "kokuseki"}], "sec": "第1章 日本の現場で大切にしていること", "a": "D", "note": "Yang dinilai: pengalaman, pengetahuan/keterampilan, kemampuan manajemen (bukan kewarganegaraan)", "part": "riron"}, {"n": 6, "jp": "レベル2になるには、システム登録後に何日以上の就業日数が必要ですか。", "ro": "Reberu ni ni naru ni wa, shisutemu tōroku-go ni nan-nichi ijō no shūgyō nissū ga hitsuyō desu ka.", "opts": [{"l": "A", "jp": "30日", "ro": "sanjū-nichi"}, {"l": "B", "jp": "365日", "ro": "sanbyaku rokujūgo-nichi"}, {"l": "C", "jp": "645日", "ro": "roppyaku yonjūgo-nichi"}, {"l": "D", "jp": "1000日", "ro": "sen-nichi"}], "sec": "第1章 日本の現場で大切にしていること", "a": "C", "note": "Level 2 butuh 645 hari kerja (±3 tahun)", "part": "riron"}, {"n": 7, "jp": "「KY活動」のKYは、何の略ですか。", "ro": "\"KY katsudō\" no KY wa, nan no ryaku desu ka.", "opts": [{"l": "A", "jp": "危険予知", "ro": "kiken yochi"}, {"l": "B", "jp": "会議予定", "ro": "kaigi yotei"}, {"l": "C", "jp": "工事要求", "ro": "kōji yōkyū"}, {"l": "D", "jp": "記録用紙", "ro": "kiroku yōshi"}], "sec": "第1章 日本の現場で大切にしていること", "a": "A", "note": "KY = Kiken Yochi (prediksi bahaya)", "part": "riron"}, {"n": 8, "jp": "その日に新しく現場に入った作業員を、何といいますか。", "ro": "Sono hi ni atarashiku genba ni haitta sagyōin o, nan to iimasu ka.", "opts": [{"l": "A", "jp": "職長", "ro": "shokuchō"}, {"l": "B", "jp": "監理者", "ro": "kanrisha"}, {"l": "C", "jp": "見習い", "ro": "minarai"}, {"l": "D", "jp": "新規入場者", "ro": "shinki nyūjōsha"}], "sec": "第1章 日本の現場で大切にしていること", "a": "D", "note": "Pekerja baru hari itu = 新規入場者", "part": "riron"}, {"n": 9, "jp": "職種ごとの朝礼で、指差しをしながら安全のスローガンを声に出して言うことを何といいますか。", "ro": "Shokushu goto no chōrei de, yubisashi o shinagara anzen no surōgan o koe ni dashite iu koto o nan to iimasu ka.", "opts": [{"l": "A", "jp": "安全唱和（タッチアンドコール）(anzen shōwa / tacchi ando kōru)", "ro": ""}, {"l": "B", "jp": "ラジオ体操", "ro": "rajio taisō"}, {"l": "C", "jp": "新規入場者の紹介", "ro": "shinki nyūjōsha no shōkai"}, {"l": "D", "jp": "現場監督のあいさつ", "ro": "genba kantoku no aisatsu"}], "sec": "第1章 日本の現場で大切にしていること", "a": "A", "note": "安全唱和 (touch and call)", "part": "riron"}, {"n": 10, "jp": "全体朝礼の最後に、全員で言う言葉はどれですか。", "ro": "Zentai chōrei no saigo ni, zen'in de iu kotoba wa dore desu ka.", "opts": [{"l": "A", "jp": "おつかれさまです", "ro": "otsukaresama desu"}, {"l": "B", "jp": "今日もご安全に！(kyō mo go-anzen ni!)", "ro": ""}, {"l": "C", "jp": "失礼します", "ro": "shitsurei shimasu"}, {"l": "D", "jp": "ご苦労さま", "ro": "gokurōsama"}], "sec": "第1章 日本の現場で大切にしていること", "a": "B", "note": "「今日もご安全に！」", "part": "riron"}, {"n": 11, "jp": "労働基準法の目的として、正しいものはどれですか。", "ro": "Rōdō kijun-hō no mokuteki toshite, tadashii mono wa dore desu ka.", "opts": [{"l": "A", "jp": "労働者を保護するため、最低の労働条件を決めること", "ro": "rōdōsha o hogo suru tame, saitei no rōdō jōken o kimeru koto"}, {"l": "B", "jp": "会社の利益を守ること", "ro": "kaisha no rieki o mamoru koto"}, {"l": "C", "jp": "賃金を自由に決めること", "ro": "chingin o jiyū ni kimeru koto"}, {"l": "D", "jp": "外国人だけを守ること", "ro": "gaikokujin dake o mamoru koto"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "A", "note": "UU Standar Ketenagakerjaan melindungi pekerja", "part": "riron"}, {"n": 12, "jp": "国籍、信条、社会的身分を理由に、賃金などで差別的取扱いをしてはいけないという原則を何といいますか。", "ro": "Kokuseki, shinjō, shakaiteki mibun o riyū ni, chingin nado de sabetsuteki toriatsukai o shite wa ikenai to iu gensoku o nan to iimasu ka.", "opts": [{"l": "A", "jp": "強制労働の禁止", "ro": "kyōsei rōdō no kinshi"}, {"l": "B", "jp": "賠償予定の禁止", "ro": "baishō yotei no kinshi"}, {"l": "C", "jp": "機会均等の原則", "ro": "kikai kintō no gensoku"}, {"l": "D", "jp": "解雇制限", "ro": "kaiko seigen"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "C", "note": "Prinsip 機会均等 (tidak diskriminasi)", "part": "riron"}, {"n": 13, "jp": "賃金支払いの5原則に含まれないものはどれですか。", "ro": "Chingin shiharai no go-gensoku ni fukumarenai mono wa dore desu ka.", "opts": [{"l": "A", "jp": "通貨で支払う", "ro": "tsūka de shiharau"}, {"l": "B", "jp": "直接労働者に支払う", "ro": "chokusetsu rōdōsha ni shiharau"}, {"l": "C", "jp": "全額を支払う", "ro": "zengaku o shiharau"}, {"l": "D", "jp": "毎年1回支払う", "ro": "maitoshi ikkai shiharau"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "D", "note": "Lima prinsip: mata uang, langsung, penuh, ≥1x/bulan, tanggal tetap", "part": "riron"}, {"n": 14, "jp": "法定労働時間は、原則として1週間で何時間ですか。", "ro": "Hōtei rōdō jikan wa, gensoku toshite isshūkan de nan-jikan desu ka.", "opts": [{"l": "A", "jp": "35時間", "ro": "sanjūgo-jikan"}, {"l": "B", "jp": "40時間", "ro": "yonjū-jikan"}, {"l": "C", "jp": "44時間", "ro": "yonjūyon-jikan"}, {"l": "D", "jp": "48時間", "ro": "yonjūhachi-jikan"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "B", "note": "40 jam/minggu (8 jam/hari)", "part": "riron"}, {"n": 15, "jp": "労働時間が8時間を超える場合、最低何時間の休憩が必要ですか。", "ro": "Rōdō jikan ga hachi-jikan o koeru baai, saitei nan-jikan no kyūkei ga hitsuyō desu ka.", "opts": [{"l": "A", "jp": "15分", "ro": "jūgo-fun"}, {"l": "B", "jp": "45分", "ro": "yonjūgo-fun"}, {"l": "C", "jp": "1時間", "ro": "ichi-jikan"}, {"l": "D", "jp": "2時間", "ro": "ni-jikan"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "C", "note": ">8 jam kerja: istirahat 1 jam", "part": "riron"}, {"n": 16, "jp": "休日出勤をした場合、割増賃金は何％以上ですか。", "ro": "Kyūjitsu shukkin o shita baai, warimashi chingin wa nan-pāsento ijō desu ka.", "opts": [{"l": "A", "jp": "35％", "ro": "sanjūgo pāsento"}, {"l": "B", "jp": "25％", "ro": "nijūgo pāsento"}, {"l": "C", "jp": "50％", "ro": "gojū pāsento"}, {"l": "D", "jp": "10％", "ro": "jū pāsento"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "A", "note": "Hari libur: 35% ke atas", "part": "riron"}, {"n": 17, "jp": "時間外労働（残業）の上限は、1か月につき何時間ですか。", "ro": "Jikangai rōdō (zangyō) no jōgen wa, ikkagetsu ni tsuki nan-jikan desu ka.", "opts": [{"l": "A", "jp": "30時間", "ro": "sanjū-jikan"}, {"l": "B", "jp": "60時間", "ro": "rokujū-jikan"}, {"l": "C", "jp": "100時間", "ro": "hyaku-jikan"}, {"l": "D", "jp": "45時間", "ro": "yonjūgo-jikan"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "D", "note": "Batas lembur 45 jam/bulan (360 jam/tahun)", "part": "riron"}, {"n": 18, "jp": "雇入れの日から6か月継続勤務し、全労働日の8割以上出勤した労働者に与えられる年次有給休暇は何日ですか。", "ro": "Yatoiire no hi kara rokkagetsu keizoku kinmu shi, zen rōdōbi no hachiwari ijō shukkin shita rōdōsha ni ataerareru nenji yūkyū kyūka wa nan-nichi desu ka.", "opts": [{"l": "A", "jp": "5日", "ro": "itsuka"}, {"l": "B", "jp": "10日", "ro": "tōka"}, {"l": "C", "jp": "14日", "ro": "jūyokka"}, {"l": "D", "jp": "20日", "ro": "hatsuka"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "B", "note": "10 hari cuti berbayar setelah 6 bulan", "part": "riron"}, {"n": 19, "jp": "使用者が、有給休暇を使わせない代わりにお金で買い取ることは、どうなっていますか。", "ro": "Shiyōsha ga, yūkyū kyūka o tsukawasenai kawari ni okane de kaitoru koto wa, dō natte imasu ka.", "opts": [{"l": "A", "jp": "自由にできる", "ro": "jiyū ni dekiru"}, {"l": "B", "jp": "外国人ならできる", "ro": "gaikokujin nara dekiru"}, {"l": "C", "jp": "違法とされている", "ro": "ihō to sarete iru"}, {"l": "D", "jp": "月に1回ならできる", "ro": "tsuki ni ikkai nara dekiru"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "C", "note": "Membeli cuti berbayar itu ilegal", "part": "riron"}, {"n": 20, "jp": "使用者が労働者に必ず明示しなければならない労働条件は、いくつの項目ですか。", "ro": "Shiyōsha ga rōdōsha ni kanarazu meiji shinakereba naranai rōdō jōken wa, ikutsu no kōmoku desu ka.", "opts": [{"l": "A", "jp": "2項目", "ro": "ni-kōmoku"}, {"l": "B", "jp": "3項目", "ro": "san-kōmoku"}, {"l": "C", "jp": "4項目", "ro": "yon-kōmoku"}, {"l": "D", "jp": "6項目", "ro": "rokku-kōmoku"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "D", "note": "6 butir wajib dinyatakan", "part": "riron"}, {"n": 21, "jp": "労働者を解雇しようとする場合は、何日前に予告しなければなりませんか。", "ro": "Rōdōsha o kaiko shiyō to suru baai wa, nan-nichi mae ni yokoku shinakereba narimasen ka.", "opts": [{"l": "A", "jp": "7日前", "ro": "nanoka mae"}, {"l": "B", "jp": "30日前", "ro": "sanjū-nichi mae"}, {"l": "C", "jp": "14日前", "ro": "jūyokka mae"}, {"l": "D", "jp": "60日前", "ro": "rokujū-nichi mae"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "B", "note": "Pemberitahuan PHK 30 hari sebelumnya", "part": "riron"}, {"n": 22, "jp": "労働安全衛生法の目的はどれですか。", "ro": "Rōdō anzen eisei-hō no mokuteki wa dore desu ka.", "opts": [{"l": "A", "jp": "職場における労働者の安全と健康を確保し、快適な職場環境をつくること", "ro": "shokuba ni okeru rōdōsha no anzen to kenkō o kakuho shi, kaiteki na shokuba kankyō o tsukuru koto"}, {"l": "B", "jp": "最低賃金を決めること", "ro": "saitei chingin o kimeru koto"}, {"l": "C", "jp": "失業した人にお金を払うこと", "ro": "shitsugyō shita hito ni okane o harau koto"}, {"l": "D", "jp": "ごみを減らすこと", "ro": "gomi o herasu koto"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "A", "note": "Tujuan: keselamatan, kesehatan, lingkungan kerja nyaman", "part": "riron"}, {"n": 23, "jp": "労災保険の保険料は、誰が負担しますか。", "ro": "Rōsai hoken no hokenryō wa, dare ga futan shimasu ka.", "opts": [{"l": "A", "jp": "労働者が全額", "ro": "rōdōsha ga zengaku"}, {"l": "B", "jp": "国が全額", "ro": "kuni ga zengaku"}, {"l": "C", "jp": "事業主が全額", "ro": "jigyōnushi ga zengaku"}, {"l": "D", "jp": "労働者と事業主が半分ずつ", "ro": "rōdōsha to jigyōnushi ga hanbun zutsu"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "C", "note": "Premi 労災 sepenuhnya ditanggung pengusaha", "part": "riron"}, {"n": 24, "jp": "「労災かくし」について、正しいものはどれですか。", "ro": "\"Rōsai kakushi\" ni tsuite, tadashii mono wa dore desu ka.", "opts": [{"l": "A", "jp": "会社を守るために協力してもよい", "ro": "kaisha o mamoru tame ni kyōryoku shite mo yoi"}, {"l": "B", "jp": "健康保険で病院に行けば問題ない", "ro": "kenkō hoken de byōin ni ikeba mondai nai"}, {"l": "C", "jp": "小さいケガなら報告しなくてよい", "ro": "chiisai kega nara hōkoku shinakute yoi"}, {"l": "D", "jp": "労働安全衛生法違反で犯罪なので、協力してはいけない", "ro": "rōdō anzen eisei-hō ihan de hanzai na node, kyōryoku shite wa ikenai"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "D", "note": "労災かくし = pelanggaran hukum/kriminal", "part": "riron"}, {"n": 25, "jp": "雇用保険の失業給付を受けるには、離職の日以前2年間に、被保険者期間が通算して何か月以上必要ですか。", "ro": "Koyō hoken no shitsugyō kyūfu o ukeru ni wa, rishoku no hi izen ninenkan ni, hihokensha kikan ga tsūsan shite nan-kagetsu ijō hitsuyō desu ka.", "opts": [{"l": "A", "jp": "3か月", "ro": "sankagetsu"}, {"l": "B", "jp": "12か月", "ro": "jūnikagetsu"}, {"l": "C", "jp": "6か月", "ro": "rokkagetsu"}, {"l": "D", "jp": "24か月", "ro": "nijūyonkagetsu"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "B", "note": "Periode tertanggung total 12 bulan dalam 2 tahun", "part": "riron"}, {"n": 26, "jp": "毎年1回のストレスチェックが義務付けられているのは、何人以上の事業場ですか。", "ro": "Maitoshi ikkai no sutoresu chekku ga gimuzukerarete iru no wa, nan-nin ijō no jigyōjō desu ka.", "opts": [{"l": "A", "jp": "10人", "ro": "jūnin"}, {"l": "B", "jp": "30人", "ro": "sanjūnin"}, {"l": "C", "jp": "50人", "ro": "gojūnin"}, {"l": "D", "jp": "100人", "ro": "hyakunin"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "C", "note": "Stress check wajib untuk tempat kerja ≥50 orang", "part": "riron"}, {"n": 27, "jp": "建設業法で許可が必要な業種は、いくつありますか。", "ro": "Kensetsugyō-hō de kyoka ga hitsuyō na gyōshu wa, ikutsu arimasu ka.", "opts": [{"l": "A", "jp": "29種類", "ro": "nijūkyū-shurui"}, {"l": "B", "jp": "19種類", "ro": "jūkyū-shurui"}, {"l": "C", "jp": "39種類", "ro": "sanjūkyū-shurui"}, {"l": "D", "jp": "49種類", "ro": "yonjūkyū-shurui"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "A", "note": "29 jenis usaha perlu izin", "part": "riron"}, {"n": 28, "jp": "建設リサイクル法で求められていることは何ですか。", "ro": "Kensetsu risaikuru-hō de motomerarete iru koto wa nan desu ka.", "opts": [{"l": "A", "jp": "すべての廃材を一つにまとめて捨てる", "ro": "subete no haizai o hitotsu ni matomete suteru"}, {"l": "B", "jp": "廃材を現場で燃やす", "ro": "haizai o genba de moyasu"}, {"l": "C", "jp": "廃材を外国へ送る", "ro": "haizai o gaikoku e okuru"}, {"l": "D", "jp": "建設廃棄物を資材ごとに分別して、再資源化と再利用を促進する", "ro": "kensetsu haikibutsu o shizai goto ni bunbetsu shite, saishigen-ka to sairiyō o sokushin suru"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "D", "note": "Pemilahan limbah per material & daur ulang", "part": "riron"}, {"n": 29, "jp": "元請け業者が、産業廃棄物が適正に最終処分されるまでの工程を確認するために作成するものはどれですか。", "ro": "Motouke gyōsha ga, sangyō haikibutsu ga tekisei ni saishū shobun sareru made no kōtei o kakunin suru tame ni sakusei suru mono wa dore desu ka.", "opts": [{"l": "A", "jp": "見積書", "ro": "mitsumorisho"}, {"l": "B", "jp": "マニフェスト", "ro": "manifesuto"}, {"l": "C", "jp": "契約書", "ro": "keiyakusho"}, {"l": "D", "jp": "図面", "ro": "zumen"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "B", "note": "マニフェスト (manifes limbah) dibuat kontraktor utama", "part": "riron"}, {"n": 30, "jp": "アスベストが使用されている建築物を解体する場合、特定粉じん排出等作業の開始の何日前までに、都道府県知事に届け出なければなりませんか。", "ro": "Asubesuto ga shiyō sarete iru kenchikubutsu o kaitai suru baai, tokutei funjin haishutsu-tō sagyō no kaishi no nan-nichi mae made ni, todōfuken chiji ni todokede nakereba narimasen ka.", "opts": [{"l": "A", "jp": "14日前", "ro": "jūyokka mae"}, {"l": "B", "jp": "7日前", "ro": "nanoka mae"}, {"l": "C", "jp": "30日前", "ro": "sanjū-nichi mae"}, {"l": "D", "jp": "60日前", "ro": "rokujū-nichi mae"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "A", "note": "Pemberitahuan asbes 14 hari sebelum mulai", "part": "riron"}, {"n": 31, "jp": "航空法により、地表または水面から何m以上の高さの物件に、航空障害灯を設置しなければなりませんか。", "ro": "Kōkū-hō ni yori, chihyō mata wa suimen kara nan-mētoru ijō no takasa no bukken ni, kōkū shōgai-tō o setchi shinakereba narimasen ka.", "opts": [{"l": "A", "jp": "10m", "ro": "jū-mētoru"}, {"l": "B", "jp": "30m", "ro": "sanjū-mētoru"}, {"l": "C", "jp": "60m", "ro": "rokujū-mētoru"}, {"l": "D", "jp": "100m", "ro": "hyaku-mētoru"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "C", "note": "Lampu penghalang udara: tinggi ≥60 m", "part": "riron"}, {"n": 32, "jp": "無人航空機（ドローン）として登録が義務化されているのは、重量が何g以上のものですか。", "ro": "Mujin kōkūki (dorōn) toshite tōroku ga gimuka sarete iru no wa, jūryō ga nan-guramu ijō no mono desu ka.", "opts": [{"l": "A", "jp": "10g", "ro": "jū-guramu"}, {"l": "B", "jp": "500g", "ro": "gohyaku-guramu"}, {"l": "C", "jp": "1000g", "ro": "sen-guramu"}, {"l": "D", "jp": "100g", "ro": "hyaku-guramu"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "D", "note": "Drone ≥100 g wajib didaftarkan", "part": "riron"}, {"n": 33, "jp": "免許が必要なトランシーバーを、免許なしで使用すると、どうなりますか。", "ro": "Menkyo ga hitsuyō na toranshībā o, menkyo nashi de shiyō suru to, dō narimasu ka.", "opts": [{"l": "A", "jp": "問題ない", "ro": "mondai nai"}, {"l": "B", "jp": "違法になる", "ro": "ihō ni naru"}, {"l": "C", "jp": "現場の中だけなら使える", "ro": "genba no naka dake nara tsukaeru"}, {"l": "D", "jp": "海外製なら使える", "ro": "kaigai-sei nara tsukaeru"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "B", "note": "Pakai transceiver berlisensi tanpa izin = ilegal", "part": "riron"}, {"n": 34, "jp": "コンクリートを伝わった水（高アルカリ排水）は、どのような処理が必要ですか。", "ro": "Konkurīto o tsutawatta mizu (kō-arukari haisui) wa, dono yō na shori ga hitsuyō desu ka.", "opts": [{"l": "A", "jp": "中和処理", "ro": "chūwa shori"}, {"l": "B", "jp": "そのまま川に流す", "ro": "sono mama kawa ni nagasu"}, {"l": "C", "jp": "土に埋める", "ro": "tsuchi ni umeru"}, {"l": "D", "jp": "熱で蒸発させる", "ro": "netsu de jōhatsu saseru"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "A", "note": "Air beton beralkali tinggi harus dinetralkan", "part": "riron"}, {"n": 35, "jp": "職場の潜在的な危険性または有害性を見つけ出し、これを取り除くための方法を何といいますか。", "ro": "Shokuba no senzaiteki na kikensei mata wa yūgaisei o mitsukedashi, kore o torinozoku tame no hōhō o nan to iimasu ka.", "opts": [{"l": "A", "jp": "健康診断", "ro": "kenkō shindan"}, {"l": "B", "jp": "安全教育", "ro": "anzen kyōiku"}, {"l": "C", "jp": "リスクアセスメント", "ro": "risuku asesumento"}, {"l": "D", "jp": "技能検定", "ro": "ginō kentei"}], "sec": "第2章 日本の現場で働く上で守らなければならない法令", "a": "C", "note": "Risk assessment", "part": "riron"}, {"n": 36, "jp": "令和3年の建設業の死亡労働災害で、最も多い事故の型はどれですか。", "ro": "Reiwa sannen no kensetsugyō no shibō rōdō saigai de, mottomo ooi jiko no kata wa dore desu ka.", "opts": [{"l": "A", "jp": "転倒", "ro": "tentō"}, {"l": "B", "jp": "感電", "ro": "kanden"}, {"l": "C", "jp": "交通事故", "ro": "kōtsū jiko"}, {"l": "D", "jp": "墜落・転落", "ro": "tsuiraku・tenraku"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "D", "note": "Jatuh (墜落・転落) terbanyak (110 dari 288 kasus)", "part": "riron"}, {"n": 37, "jp": "建設業の「三大災害」に含まれないものはどれですか。", "ro": "Kensetsugyō no \"sandai saigai\" ni fukumarenai mono wa dore desu ka.", "opts": [{"l": "A", "jp": "墜落・転落", "ro": "tsuiraku・tenraku"}, {"l": "B", "jp": "崩壊・倒壊", "ro": "hōkai・tōkai"}, {"l": "C", "jp": "感電", "ro": "kanden"}, {"l": "D", "jp": "建設機械・クレーンなど災害", "ro": "kensetsu kikai・kurēn nado saigai"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "C", "note": "Tiga bencana besar: jatuh, mesin/crane, runtuh (bukan kesetrum)", "part": "riron"}, {"n": 38, "jp": "三大災害以外で多い事故として、テキストに書かれているものはどれですか。", "ro": "Sandai saigai igai de ooi jiko toshite, tekisuto ni kakarete iru mono wa dore desu ka.", "opts": [{"l": "A", "jp": "交通事故（道路）(kōtsū jiko / dōro)", "ro": ""}, {"l": "B", "jp": "火災", "ro": "kasai"}, {"l": "C", "jp": "おぼれ", "ro": "oborē"}, {"l": "D", "jp": "有害物との接触", "ro": "yūgaibutsu to no sesshoku"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "A", "note": "Kecelakaan lalu lintas (jalan) banyak", "part": "riron"}, {"n": 39, "jp": "建設現場での死亡災害は、その半数近くが入場後どのくらいの期間以内に発生していますか。", "ro": "Kensetsu genba de no shibō saigai wa, sono hansū chikaku ga nyūjō-go dono kurai no kikan inai ni hassei shite imasu ka.", "opts": [{"l": "A", "jp": "1日", "ro": "ichinichi"}, {"l": "B", "jp": "1週間", "ro": "isshūkan"}, {"l": "C", "jp": "1か月", "ro": "ikkagetsu"}, {"l": "D", "jp": "1年", "ro": "ichinen"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "B", "note": "Hampir separuh kematian terjadi dalam 1 minggu setelah masuk", "part": "riron"}, {"n": 40, "jp": "新入者安全衛生教育は、誰が労働者を新しく雇い入れたときに行うものですか。", "ro": "Shinnyūsha anzen eisei kyōiku wa, dare ga rōdōsha o atarashiku yatoiireta toki ni okonau mono desu ka.", "opts": [{"l": "A", "jp": "労働者本人", "ro": "rōdōsha honnin"}, {"l": "B", "jp": "発注者", "ro": "hatchūsha"}, {"l": "C", "jp": "監理者", "ro": "kanrisha"}, {"l": "D", "jp": "事業者", "ro": "jigyōsha"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "D", "note": "事業者 (pemberi kerja) yang menyelenggarakan", "part": "riron"}, {"n": 41, "jp": "2022年1月2日から、作業床の高さが何mを超える場合に、フルハーネス型墜落制止用器具の装着が義務付けられましたか。", "ro": "Nisen nijūni-nen ichigatsu futsuka kara, sagyō-yuka no takasa ga nan-mētoru o koeru baai ni, furu hānesu-gata tsuiraku seishi-yō kigu no sōchaku ga gimuzukeraremashita ka.", "opts": [{"l": "A", "jp": "2m", "ro": "ni-mētoru"}, {"l": "B", "jp": "5m", "ro": "go-mētoru"}, {"l": "C", "jp": "6.75m", "ro": "rokuten nanagojū-mētoru"}, {"l": "D", "jp": "10m", "ro": "jū-mētoru"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "C", "note": "Ketinggian lantai kerja >6,75 m", "part": "riron"}, {"n": 42, "jp": "墜落事故の多い建設業では、何mを超える高さの作業でも、フルハーネス型墜落制止用器具の使用が求められていますか。", "ro": "Tsuiraku jiko no ooi kensetsugyō de wa, nan-mētoru o koeru takasa no sagyō demo, furu hānesu-gata tsuiraku seishi-yō kigu no shiyō ga motomerarete imasu ka.", "opts": [{"l": "A", "jp": "5m", "ro": "go-mētoru"}, {"l": "B", "jp": "2m", "ro": "ni-mētoru"}, {"l": "C", "jp": "10m", "ro": "jū-mētoru"}, {"l": "D", "jp": "15m", "ro": "jūgo-mētoru"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "A", "note": "Industri konstruksi: >5 m", "part": "riron"}, {"n": 43, "jp": "気象庁が各地で予測値を出している、熱中症の危険度を表す指標はどれですか。", "ro": "Kishōchō ga kakuchi de yosokuchi o dashite iru, netchūshō no kikendo o arawasu shihyō wa dore desu ka.", "opts": [{"l": "A", "jp": "湿度", "ro": "shitsudo"}, {"l": "B", "jp": "暑さ指数（WBGT）(atsusa shisū / WBGT)", "ro": ""}, {"l": "C", "jp": "風速", "ro": "fūsoku"}, {"l": "D", "jp": "気圧", "ro": "kiatsu"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "B", "note": "WBGT (indeks panas)", "part": "riron"}, {"n": 44, "jp": "気温が35℃を超える日を何といいますか。", "ro": "Kion ga sanjūgo-do o koeru hi o nan to iimasu ka.", "opts": [{"l": "A", "jp": "真夏日", "ro": "manatsubi"}, {"l": "B", "jp": "夏日", "ro": "natsubi"}, {"l": "C", "jp": "猛暑日", "ro": "mōshobi"}, {"l": "D", "jp": "熱帯夜", "ro": "nettaiya"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "C", "note": "猛暑日 = di atas 35℃ (真夏日 = di atas 30℃)", "part": "riron"}, {"n": 45, "jp": "建設現場で見られる「緑十字」のマークは、何のシンボルですか。", "ro": "Kensetsu genba de mirareru \"midori jūji\" no māku wa, nan no shinboru desu ka.", "opts": [{"l": "A", "jp": "交通ルール", "ro": "kōtsū rūru"}, {"l": "B", "jp": "火災注意", "ro": "kasai chūi"}, {"l": "C", "jp": "工事の許可", "ro": "kōji no kyoka"}, {"l": "D", "jp": "安全や衛生", "ro": "anzen ya eisei"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "D", "note": "Palang hijau = keselamatan & kebersihan/kesehatan", "part": "riron"}, {"n": 46, "jp": "緑十字に、「衛生」を表す白十字を組み合わせた旗を何といいますか。", "ro": "Midori jūji ni, \"eisei\" o arawasu haku jūji o kumiawaseta hata o nan to iimasu ka.", "opts": [{"l": "A", "jp": "安全旗", "ro": "anzenki"}, {"l": "B", "jp": "安全衛生旗", "ro": "anzen eiseiki"}, {"l": "C", "jp": "国旗", "ro": "kokki"}, {"l": "D", "jp": "工事旗", "ro": "kōjiki"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "B", "note": "Bendera 安全衛生旗", "part": "riron"}, {"n": 47, "jp": "ヒューマンエラーが起こる原因は、何種類あるとされていますか。", "ro": "Hyūman erā ga okoru gen'in wa, nan-shurui aru to sarete imasu ka.", "opts": [{"l": "A", "jp": "5種類", "ro": "go-shurui"}, {"l": "B", "jp": "8種類", "ro": "hasshurui"}, {"l": "C", "jp": "12種類", "ro": "jūni-shurui"}, {"l": "D", "jp": "20種類", "ro": "nijisshurui"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "C", "note": "12 jenis human error", "part": "riron"}, {"n": 48, "jp": "「この場面では、こういう指示が来るはずだ」という思い込みが原因で起こるヒューマンエラーはどれですか。", "ro": "\"Kono bamen de wa, kō iu shiji ga kuru hazu da\" to iu omoikomi ga gen'in de okoru hyūman erā wa dore desu ka.", "opts": [{"l": "A", "jp": "認知ミス", "ro": "ninchi misu"}, {"l": "B", "jp": "不注意", "ro": "fuchūi"}, {"l": "C", "jp": "疲労", "ro": "hirō"}, {"l": "D", "jp": "連絡不足", "ro": "renraku busoku"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "A", "note": "Asumsi/salah persepsi = 認知ミス", "part": "riron"}, {"n": 49, "jp": "単純な作業を繰り返しているときに、考えないで無意識に動作をするようになって起こるヒューマンエラーはどれですか。", "ro": "Tanjun na sagyō o kurikaeshite iru toki ni, kangaenai de muishiki ni dōsa o suru yō ni natte okoru hyūman erā wa dore desu ka.", "opts": [{"l": "A", "jp": "経験不足", "ro": "keiken busoku"}, {"l": "B", "jp": "場面行動本能", "ro": "bamen kōdō honnō"}, {"l": "C", "jp": "パニック", "ro": "panikku"}, {"l": "D", "jp": "注意や意識の低下", "ro": "chūi ya ishiki no teika"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "D", "note": "Kelalaian akibat pekerjaan monoton", "part": "riron"}, {"n": 50, "jp": "効率的に作業を進めたいという気持ちから、本来やるべき行動を省略してしまうヒューマンエラーはどれですか。", "ro": "Kōritsuteki ni sagyō o susumetai to iu kimochi kara, honrai yarubeki kōdō o shōryaku shite shimau hyūman erā wa dore desu ka.", "opts": [{"l": "A", "jp": "近道行動・省略行動", "ro": "chikamichi kōdō・shōryaku kōdō"}, {"l": "B", "jp": "慣れによる手抜き", "ro": "nare ni yoru tenuki"}, {"l": "C", "jp": "集団欠陥", "ro": "shūdan kekkan"}, {"l": "D", "jp": "疲労", "ro": "hirō"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "A", "note": "Jalan pintas/menghilangkan langkah", "part": "riron"}, {"n": 51, "jp": "安全施工サイクルの最初（①）は何ですか。", "ro": "Anzen sekō saikuru no saisho (maru ichi) wa nan desu ka.", "opts": [{"l": "A", "jp": "安全パトロール", "ro": "anzen patorōru"}, {"l": "B", "jp": "作業前の安全朝礼", "ro": "sagyō-mae no anzen chōrei"}, {"l": "C", "jp": "持ち場の後片付け", "ro": "mochiba no atokatazuke"}, {"l": "D", "jp": "終業時の安全確認", "ro": "shūgyōji no anzen kakunin"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "B", "note": "Siklus mulai dari apel keselamatan sebelum kerja", "part": "riron"}, {"n": 52, "jp": "安全施工サイクルで、火災・盗難・公衆災害などの防止対策の確認をするのはどれですか。", "ro": "Anzen sekō saikuru de, kasai・tōnan・kōshū saigai nado no bōshi taisaku no kakunin o suru no wa dore desu ka.", "opts": [{"l": "A", "jp": "安全ミーティング", "ro": "anzen mītingu"}, {"l": "B", "jp": "安全工程打合せ", "ro": "anzen kōtei uchiawase"}, {"l": "C", "jp": "終業時の安全確認", "ro": "shūgyōji no anzen kakunin"}, {"l": "D", "jp": "作業開始前点検", "ro": "sagyō kaishi-mae tenken"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "C", "note": "Konfirmasi keselamatan saat selesai kerja", "part": "riron"}, {"n": 53, "jp": "岩石の裁断作業などで発生する粉じんを長期にわたって吸い続けると、何という病気を引き起こしますか。", "ro": "Ganseki no saidan sagyō nado de hassei suru funjin o chōki ni watatte suitsuzukeru to, nan to iu byōki o hikiokoshimasu ka.", "opts": [{"l": "A", "jp": "熱中症", "ro": "netchūshō"}, {"l": "B", "jp": "感電", "ro": "kanden"}, {"l": "C", "jp": "難聴", "ro": "nanchō"}, {"l": "D", "jp": "じん肺", "ro": "jinpai"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "D", "note": "Debu terus dihirup → pneumokoniosis (じん肺)", "part": "riron"}, {"n": 54, "jp": "丸のこ、ボール盤など、回転する刃物を使うとき、手袋（軍手）はどうしますか。", "ro": "Maruno-ko, bōru-ban nado, kaiten suru hamono o tsukau toki, tebukuro (gunte) wa dō shimasu ka.", "opts": [{"l": "A", "jp": "使ってはいけない", "ro": "tsukatte wa ikenai"}, {"l": "B", "jp": "必ず使う", "ro": "kanarazu tsukau"}, {"l": "C", "jp": "2枚重ねて使う", "ro": "nimai kasanete tsukau"}, {"l": "D", "jp": "ぬれていなければ使ってよい", "ro": "nurete inakereba tsukatte yoi"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "A", "note": "Dilarang memakai sarung tangan dekat mata pisau berputar", "part": "riron"}, {"n": 55, "jp": "道路工事の特徴として、正しいものはどれですか。", "ro": "Dōro kōji no tokuchō toshite, tadashii mono wa dore desu ka.", "opts": [{"l": "A", "jp": "建設機械と人が遠く離れて作業する", "ro": "kensetsu kikai to hito ga tōku hanarete sagyō suru"}, {"l": "B", "jp": "建設機械と人が接近して作業する", "ro": "kensetsu kikai to hito ga sekkin shite sagyō suru"}, {"l": "C", "jp": "夜しか作業しない", "ro": "yoru shika sagyō shinai"}, {"l": "D", "jp": "機械を使わない", "ro": "kikai o tsukawanai"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "B", "note": "Mesin dan orang bekerja berdekatan", "part": "riron"}, {"n": 56, "jp": "バックホウの転倒は、何による死亡事故につながりますか。", "ro": "Bakku hō no tentō wa, nani ni yoru shibō jiko ni tsunagarimasu ka.", "opts": [{"l": "A", "jp": "感電", "ro": "kanden"}, {"l": "B", "jp": "熱中症", "ro": "netchūshō"}, {"l": "C", "jp": "下敷き", "ro": "shitajiki"}, {"l": "D", "jp": "おぼれ", "ro": "oborē"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "C", "note": "Terguling → tertimpa (下敷き)", "part": "riron"}, {"n": 57, "jp": "トンネル坑内で、一酸化炭素や二酸化炭素の有無や濃度を調べるには、何を使いますか。", "ro": "Tonneru kōnai de, issanka tanso ya nisanka tanso no umu ya nōdo o shiraberu ni wa, nani o tsukaimasu ka.", "opts": [{"l": "A", "jp": "目で見る", "ro": "me de miru"}, {"l": "B", "jp": "においをかぐ", "ro": "nioi o kagu"}, {"l": "C", "jp": "温度計", "ro": "ondokei"}, {"l": "D", "jp": "検知器", "ro": "kenchiki"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "D", "note": "Gas tidak berwarna/berbau harus diukur dengan alat detektor", "part": "riron"}, {"n": 58, "jp": "飛来・落下災害を防ぐために、大切なことはどれですか。", "ro": "Hirai・rakka saigai o fusegu tame ni, taisetsu na koto wa dore desu ka.", "opts": [{"l": "A", "jp": "吊り荷の下には入らない", "ro": "tsurini no shita ni wa hairanai"}, {"l": "B", "jp": "吊り荷の下で作業を急ぐ", "ro": "tsurini no shita de sagyō o isogu"}, {"l": "C", "jp": "玉掛けを1人で急いで行う", "ro": "tamakake o hitori de isoide okonau"}, {"l": "D", "jp": "工具を高い所に置く", "ro": "kōgu o takai tokoro ni oku"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "A", "note": "Jangan masuk ke bawah beban gantung", "part": "riron"}, {"n": 59, "jp": "令和3年度の全業種の外国人労働者の死亡災害で、最も人数が多い業種はどれですか。", "ro": "Reiwa sannendo no zengyōshu no gaikokujin rōdōsha no shibō saigai de, mottomo ninzū ga ooi gyōshu wa dore desu ka.", "opts": [{"l": "A", "jp": "製造業", "ro": "seizōgyō"}, {"l": "B", "jp": "建設業", "ro": "kensetsugyō"}, {"l": "C", "jp": "その他", "ro": "sono ta"}, {"l": "D", "jp": "農業", "ro": "nōgyō"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "B", "note": "Konstruksi terbanyak (10 orang, tahun Reiwa 3)", "part": "riron"}, {"n": 60, "jp": "疲労による事故を防ぐために、日常の健康管理として大切なことはどれですか。", "ro": "Hirō ni yoru jiko o fusegu tame ni, nichijō no kenkō kanri toshite taisetsu na koto wa dore desu ka.", "opts": [{"l": "A", "jp": "睡眠を減らす", "ro": "suimin o herasu"}, {"l": "B", "jp": "栄養を取らない", "ro": "eiyō o toranai"}, {"l": "C", "jp": "休まず働く", "ro": "yasumazu hataraku"}, {"l": "D", "jp": "適切な睡眠と栄養補給", "ro": "tekisetsu na suimin to eiyō hokyū"}], "sec": "第7章 建設工事の安全（統計・災害・ヒューマンエラー）", "a": "D", "note": "Tidur cukup & asupan gizi", "part": "riron"}, {"n": 61, "jp": "朝、初めて出会った人に、どうあいさつしますか。", "ro": "Asa, hajimete deatta hito ni, dō aisatsu shimasu ka.", "opts": [{"l": "A", "jp": "失礼します", "ro": "shitsurei shimasu"}, {"l": "B", "jp": "おつかれさまです", "ro": "otsukaresama desu"}, {"l": "C", "jp": "おはようございます", "ro": "ohayō gozaimasu"}, {"l": "D", "jp": "ご苦労さま", "ro": "gokurōsama"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "C", "note": "Salam pagi: おはようございます", "part": "jitsugi"}, {"n": 62, "jp": "危険な作業にとりかかる相手とすれ違うとき、どんな言葉をかけますか。", "ro": "Kiken na sagyō ni torikakaru aite to surechigau toki, donna kotoba o kakemasu ka.", "opts": [{"l": "A", "jp": "ご安全に！(go-anzen ni!)", "ro": ""}, {"l": "B", "jp": "ご苦労さま", "ro": "gokurōsama"}, {"l": "C", "jp": "失礼します", "ro": "shitsurei shimasu"}, {"l": "D", "jp": "さようなら", "ro": "sayōnara"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "A", "note": "ご安全に untuk mendoakan keselamatan", "part": "jitsugi"}, {"n": 63, "jp": "「おつかれさまです」は、どこで使える言葉ですか。", "ro": "\"Otsukaresama desu\" wa, doko de tsukaeru kotoba desu ka.", "opts": [{"l": "A", "jp": "建設現場だけ", "ro": "kensetsu genba dake"}, {"l": "B", "jp": "事務所だけ", "ro": "jimusho dake"}, {"l": "C", "jp": "朝礼のときだけ", "ro": "chōrei no toki dake"}, {"l": "D", "jp": "働く人がいる場所ならどこでも", "ro": "hataraku hito ga iru basho nara doko demo"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "D", "note": "おつかれさまです bisa dipakai di mana pun ada orang bekerja", "part": "jitsugi"}, {"n": 64, "jp": "現場監督・職長・先輩など、目上の人に使わないほうがよい言葉はどれですか。", "ro": "Genba kantoku・shokuchō・senpai nado, meue no hito ni tsukawanai hō ga yoi kotoba wa dore desu ka.", "opts": [{"l": "A", "jp": "おつかれさまです", "ro": "otsukaresama desu"}, {"l": "B", "jp": "ご苦労さま", "ro": "gokurōsama"}, {"l": "C", "jp": "ご安全に", "ro": "go-anzen ni"}, {"l": "D", "jp": "おはようございます", "ro": "ohayō gozaimasu"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "B", "note": "ご苦労さま tidak dipakai ke atasan", "part": "jitsugi"}, {"n": 65, "jp": "仕事をしている人より先に帰るとき、どう言いますか。", "ro": "Shigoto o shite iru hito yori saki ni kaeru toki, dō iimasu ka.", "opts": [{"l": "A", "jp": "おはようございます", "ro": "ohayō gozaimasu"}, {"l": "B", "jp": "ご苦労さま", "ro": "gokurōsama"}, {"l": "C", "jp": "お先に失礼します", "ro": "osaki ni shitsurei shimasu"}, {"l": "D", "jp": "危ない", "ro": "abunai"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "C", "note": "Pulang duluan: お先に失礼します", "part": "jitsugi"}, {"n": 66, "jp": "上から物が落ちてきたとき、まわりの人がとっさに言う言葉はどれですか。", "ro": "Ue kara mono ga ochite kita toki, mawari no hito ga tossa ni iu kotoba wa dore desu ka.", "opts": [{"l": "A", "jp": "危ない！よけろっ！(abunai! yokerō!)", "ro": ""}, {"l": "B", "jp": "おつかれさまです", "ro": "otsukaresama desu"}, {"l": "C", "jp": "ご安全に", "ro": "go-anzen ni"}, {"l": "D", "jp": "失礼します", "ro": "shitsurei shimasu"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "A", "note": "Seruan darurat: 危ない！よけろっ！", "part": "jitsugi"}, {"n": 67, "jp": "水平を表示する基準高さの墨を何といいますか。", "ro": "Suihei o hyōji suru kijun takasa no sumi o nan to iimasu ka.", "opts": [{"l": "A", "jp": "立て墨", "ro": "tatezumi"}, {"l": "B", "jp": "地墨", "ro": "jizumi"}, {"l": "C", "jp": "逃げ墨", "ro": "nigezumi"}, {"l": "D", "jp": "陸墨", "ro": "rokuzumi"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "D", "note": "陸墨 = garis ketinggian horizontal", "part": "jitsugi"}, {"n": 68, "jp": "建物を建てるための基準線・位置・高さが分かるように作る「仮の囲い」を何といいますか。", "ro": "Tatemono o tateru tame no kijunsen・ichi・takasa ga wakaru yō ni tsukuru \"kari no kakoi\" o nan to iimasu ka.", "opts": [{"l": "A", "jp": "墨出し", "ro": "sumidashi"}, {"l": "B", "jp": "遣り方", "ro": "yarikata"}, {"l": "C", "jp": "根切り", "ro": "negiri"}, {"l": "D", "jp": "地縄張り", "ro": "jinawabari"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "B", "note": "遣り方 = pagar sementara penanda acuan", "part": "jitsugi"}, {"n": 69, "jp": "建設用語で、コンクリートを「打つ」とは、どういう意味ですか。", "ro": "Kensetsu yōgo de, konkurīto o \"utsu\" to wa, dō iu imi desu ka.", "opts": [{"l": "A", "jp": "叩く", "ro": "tataku"}, {"l": "B", "jp": "運ぶ", "ro": "hakobu"}, {"l": "C", "jp": "流し込む", "ro": "nagashikomu"}, {"l": "D", "jp": "壊す", "ro": "kowasu"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "C", "note": "打つ = menuang beton", "part": "jitsugi"}, {"n": 70, "jp": "打ち重ねのタイミングが適切でない場合に起こる、コンクリートのつなぎ目を何といいますか。", "ro": "Uchikasane no taimingu ga tekisetsu de nai baai ni okoru, konkurīto no tsunagime o nan to iimasu ka.", "opts": [{"l": "A", "jp": "コールドジョイント", "ro": "kōrudo jointo"}, {"l": "B", "jp": "捨てコン", "ro": "sutekon"}, {"l": "C", "jp": "ノロ", "ro": "noro"}, {"l": "D", "jp": "アンコ", "ro": "anko"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "A", "note": "コールドジョイント (sambungan dingin)", "part": "jitsugi"}, {"n": 71, "jp": "コンクリートの打設中に、型枠が壊れてコンクリートが流れ出すことを何といいますか。", "ro": "Konkurīto no dasetsu-chū ni, katawaku ga kowarete konkurīto ga nagaredasu koto o nan to iimasu ka.", "opts": [{"l": "A", "jp": "転用", "ro": "tenyō"}, {"l": "B", "jp": "結束", "ro": "kessoku"}, {"l": "C", "jp": "建込み", "ro": "tatekomi"}, {"l": "D", "jp": "パンク", "ro": "panku"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "D", "note": "パンク = bekisting jebol", "part": "jitsugi"}, {"n": 72, "jp": "5Sのうち、必要なものを決められた場所に置くことを何といいますか。", "ro": "Gō-esu no uchi, hitsuyō na mono o kimerareta basho ni oku koto o nan to iimasu ka.", "opts": [{"l": "A", "jp": "整理", "ro": "seiri"}, {"l": "B", "jp": "整頓", "ro": "seiton"}, {"l": "C", "jp": "清掃", "ro": "seisō"}, {"l": "D", "jp": "清潔", "ro": "seiketsu"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "B", "note": "整頓 = menaruh di tempat yang ditentukan", "part": "jitsugi"}, {"n": 73, "jp": "建設現場での服装として、正しいものはどれですか。", "ro": "Kensetsu genba de no fukusō toshite, tadashii mono wa dore desu ka.", "opts": [{"l": "A", "jp": "半袖・短パンで入場する", "ro": "hansode・tanpan de nyūjō suru"}, {"l": "B", "jp": "上着の前を開ける", "ro": "uwagi no mae o akeru"}, {"l": "C", "jp": "袖を手首までおろして着用する", "ro": "sode o tekubi made oroshite chakuyō suru"}, {"l": "D", "jp": "袖をまくって作業する", "ro": "sode o makutte sagyō suru"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "C", "note": "Lengan baju sampai pergelangan tangan", "part": "jitsugi"}, {"n": 74, "jp": "「ほうれんそう」のうち、トラブルが発生した場合やわからないことを先輩や職長に伝えることは何ですか。", "ro": "\"Hōrensō\" no uchi, toraburu ga hassei shita baai ya wakaranai koto o senpai ya shokuchō ni tsutaeru koto wa nan desu ka.", "opts": [{"l": "A", "jp": "相談", "ro": "sōdan"}, {"l": "B", "jp": "報告", "ro": "hōkoku"}, {"l": "C", "jp": "連絡", "ro": "renraku"}, {"l": "D", "jp": "確認", "ro": "kakunin"}], "sec": "第4章 あいさつ・用語・共同生活", "a": "A", "note": "相談 = konsultasi", "part": "jitsugi"}, {"n": 75, "jp": "顧客の要望に合わせて、一から設計して一つだけ作る製造のことを何といいますか。", "ro": "Kokyaku no yōbō ni awasete, ichi kara sekkei shite hitotsu dake tsukuru seizō no koto o nan to iimasu ka.", "opts": [{"l": "A", "jp": "大量生産", "ro": "tairyō seisan"}, {"l": "B", "jp": "受注一品生産", "ro": "juchū ippin seisan"}, {"l": "C", "jp": "在庫生産", "ro": "zaiko seisan"}, {"l": "D", "jp": "自動生産", "ro": "jidō seisan"}], "sec": "第6章 建設現場の施工に関する知識", "a": "B", "note": "受注一品生産 (produksi satu unit sesuai pesanan)", "part": "jitsugi"}, {"n": 76, "jp": "「施工手段の5M」に含まれないものはどれですか。", "ro": "\"Sekō shudan no gō-emu\" ni fukumarenai mono wa dore desu ka.", "opts": [{"l": "A", "jp": "人（労力）(hito / rōryoku)", "ro": ""}, {"l": "B", "jp": "材料", "ro": "zairyō"}, {"l": "C", "jp": "機械", "ro": "kikai"}, {"l": "D", "jp": "時間", "ro": "jikan"}], "sec": "第6章 建設現場の施工に関する知識", "a": "D", "note": "5M: tenaga, material, metode, mesin, dana (bukan waktu)", "part": "jitsugi"}, {"n": 77, "jp": "施工管理の「QCDSE」のうち、「D（Delivery）」は何の管理ですか。", "ro": "Sekō kanri no \"QCDSE\" no uchi, \"D (Delivery)\" wa nan no kanri desu ka.", "opts": [{"l": "A", "jp": "工程管理", "ro": "kōtei kanri"}, {"l": "B", "jp": "品質管理", "ro": "hinshitsu kanri"}, {"l": "C", "jp": "安全管理", "ro": "anzen kanri"}, {"l": "D", "jp": "環境保全管理", "ro": "kankyō hozen kanri"}], "sec": "第6章 建設現場の施工に関する知識", "a": "A", "note": "D = Delivery = manajemen jadwal (工程)", "part": "jitsugi"}, {"n": 78, "jp": "墨出しで、直角・水平の確認が簡単にできる現在よく使われる機器はどれですか。", "ro": "Sumidashi de, chokkaku・suihei no kakunin ga kantan ni dekiru genzai yoku tsukawareru kiki wa dore desu ka.", "opts": [{"l": "A", "jp": "ハンマー", "ro": "hanmā"}, {"l": "B", "jp": "ランマー", "ro": "ranmā"}, {"l": "C", "jp": "レーザー照射器", "ro": "rēzā shōshaki"}, {"l": "D", "jp": "ツルハシ", "ro": "tsuruhashi"}], "sec": "第6章 建設現場の施工に関する知識", "a": "C", "note": "Laser pemancar untuk tanda siku/datar", "part": "jitsugi"}, {"n": 79, "jp": "垂直に近く切り立つ面の最下部を掘り込む「すかし掘り」は、どうしなければなりませんか。", "ro": "Suichoku ni chikaku kiritatsu men no saikabu o horikomu \"sukashibori\" wa, dō shinakereba narimasen ka.", "opts": [{"l": "A", "jp": "安全なので行ってよい", "ro": "anzen na node okonatte yoi"}, {"l": "B", "jp": "2人ならしてよい", "ro": "futari nara shite yoi"}, {"l": "C", "jp": "雨の日ならしてよい", "ro": "ame no hi nara shite yoi"}, {"l": "D", "jp": "絶対にしてはいけない", "ro": "zettai ni shite wa ikenai"}], "sec": "第6章 建設現場の施工に関する知識", "a": "D", "note": "すかし掘り dilarang mutlak (bahaya longsor)", "part": "jitsugi"}, {"n": 80, "jp": "2名以上でツルハシを使って掘削するとき、どのように作業しますか。", "ro": "Ni-mei ijō de tsuruhashi o tsukatte kussaku suru toki, dono yō ni sagyō shimasu ka.", "opts": [{"l": "A", "jp": "上下に離れて作業する", "ro": "jōge ni hanarete sagyō suru"}, {"l": "B", "jp": "横に離れて作業する", "ro": "yoko ni hanarete sagyō suru"}, {"l": "C", "jp": "背中合わせで近くで作業する", "ro": "senaka awase de chikaku de sagyō suru"}, {"l": "D", "jp": "大きく振りかぶって作業する", "ro": "ōkiku furikabutte sagyō suru"}], "sec": "第6章 建設現場の施工に関する知識", "a": "B", "note": "Menjauh ke samping, bukan atas-bawah", "part": "jitsugi"}, {"n": 81, "jp": "埋め戻しをするとき、締め固め機械を使って、どのくらいの厚さで何度も締め固めますか。", "ro": "Umemodoshi o suru toki, shimekatame kikai o tsukatte, dono kurai no atsusa de nando mo shimekatamemasu ka.", "opts": [{"l": "A", "jp": "50cm以上", "ro": "gojussenchi ijō"}, {"l": "B", "jp": "1m以下", "ro": "ichi-mētoru ika"}, {"l": "C", "jp": "30cm以下", "ro": "sanjussenchi ika"}, {"l": "D", "jp": "2m以下", "ro": "ni-mētoru ika"}], "sec": "第6章 建設現場の施工に関する知識", "a": "C", "note": "Pemadatan urukan setebal ≤30 cm", "part": "jitsugi"}, {"n": 82, "jp": "溝などの狭い部分の締め固めに使う機械はどれですか。", "ro": "Mizo nado no semai bubun no shimekatame ni tsukau kikai wa dore desu ka.", "opts": [{"l": "A", "jp": "ランマー", "ro": "ranmā"}, {"l": "B", "jp": "タイヤローラー", "ro": "taiya rōrā"}, {"l": "C", "jp": "ブルドーザー", "ro": "burudōzā"}, {"l": "D", "jp": "ダンプトラック", "ro": "danpu torakku"}], "sec": "第6章 建設現場の施工に関する知識", "a": "A", "note": "ランマー untuk area sempit seperti parit", "part": "jitsugi"}, {"n": 83, "jp": "事故の防止のため、法肩（法面の上の平面と交わる部分）には、どうしますか。", "ro": "Jiko no bōshi no tame, norikata (norimen no ue no heimen to majiwaru bubun) ni wa, dō shimasu ka.", "opts": [{"l": "A", "jp": "重いものを置く", "ro": "omoi mono o oku"}, {"l": "B", "jp": "材料を積む", "ro": "zairyō o tsumu"}, {"l": "C", "jp": "機械を止める", "ro": "kikai o tomeru"}, {"l": "D", "jp": "重いものは置かない", "ro": "omoi mono wa okanai"}], "sec": "第6章 建設現場の施工に関する知識", "a": "D", "note": "Jangan menaruh barang berat di tepi lereng", "part": "jitsugi"}, {"n": 84, "jp": "推進トンネル工事で、有毒ガスの測定は、いつ実施しますか。", "ro": "Suishin tonneru kōji de, yūdoku gasu no sokutei wa, itsu jisshi shimasu ka.", "opts": [{"l": "A", "jp": "週に1回", "ro": "shū ni ikkai"}, {"l": "B", "jp": "各作業シフトの始業時", "ro": "kaku sagyō shifuto no shigyōji"}, {"l": "C", "jp": "月に1回", "ro": "tsuki ni ikkai"}, {"l": "D", "jp": "事故が起きたとき", "ro": "jiko ga okita toki"}], "sec": "第6章 建設現場の施工に関する知識", "a": "B", "note": "Ukur gas beracun saat mulai tiap shift", "part": "jitsugi"}, {"n": 85, "jp": "海洋土木工事の海の作業で、必ず着るものはどれですか。", "ro": "Kaiyō doboku kōji no umi no sagyō de, kanarazu kiru mono wa dore desu ka.", "opts": [{"l": "A", "jp": "ヘルメットだけ", "ro": "herumetto dake"}, {"l": "B", "jp": "軍手", "ro": "gunte"}, {"l": "C", "jp": "救命胴衣", "ro": "kyūmei dōi"}, {"l": "D", "jp": "かさ", "ro": "kasa"}], "sec": "第6章 建設現場の施工に関する知識", "a": "C", "note": "Wajib rompi pelampung", "part": "jitsugi"}, {"n": 86, "jp": "作業船の乗り降りで、正しいものはどれですか。", "ro": "Sagyōsen no noriori de, tadashii mono wa dore desu ka.", "opts": [{"l": "A", "jp": "飛び乗り・飛び降りをしない", "ro": "tobinori・tobiori o shinai"}, {"l": "B", "jp": "急いで飛び乗る", "ro": "isoide tobinoru"}, {"l": "C", "jp": "荷物を持って飛び降りる", "ro": "nimotsu o motte tobioriru"}, {"l": "D", "jp": "走って乗る", "ro": "hashitte noru"}], "sec": "第6章 建設現場の施工に関する知識", "a": "A", "note": "Jangan melompat naik/turun kapal", "part": "jitsugi"}, {"n": 87, "jp": "アスファルト舗装道路の4つの層のうち、一番下の層はどれですか。", "ro": "Asufaruto hosō dōro no yottsu no sō no uchi, ichiban shita no sō wa dore desu ka.", "opts": [{"l": "A", "jp": "表層", "ro": "hyōsō"}, {"l": "B", "jp": "基層", "ro": "kisō"}, {"l": "C", "jp": "路盤", "ro": "roban"}, {"l": "D", "jp": "路床", "ro": "roshō"}], "sec": "第6章 建設現場の施工に関する知識", "a": "D", "note": "Lapisan paling bawah: 路床", "part": "jitsugi"}, {"n": 88, "jp": "建設機械を移送車両に積み下ろしするときの傾斜板は、勾配が何度以下になるようにしますか。", "ro": "Kensetsu kikai o isō sharyō ni tsumioroshi suru toki no keishaban wa, kōbai ga nan-do ika ni naru yō ni shimasu ka.", "opts": [{"l": "A", "jp": "30度", "ro": "sanjū-do"}, {"l": "B", "jp": "15度", "ro": "jūgo-do"}, {"l": "C", "jp": "45度", "ro": "yonjūgo-do"}, {"l": "D", "jp": "60度", "ro": "rokujū-do"}], "sec": "第6章 建設現場の施工に関する知識", "a": "B", "note": "Papan miring ≤15 derajat", "part": "jitsugi"}, {"n": 89, "jp": "足場で、建地は垂直に立て、布は建地に対してどうなるように取り付けますか。", "ro": "Ashiba de, tateji wa suichoku ni tate, nuno wa tateji ni taishite dō naru yō ni toritsukemasu ka.", "opts": [{"l": "A", "jp": "平行", "ro": "heikō"}, {"l": "B", "jp": "斜め", "ro": "naname"}, {"l": "C", "jp": "直角", "ro": "chokkaku"}, {"l": "D", "jp": "自由な角度", "ro": "jiyū na kakudo"}], "sec": "第6章 建設現場の施工に関する知識", "a": "C", "note": "Balok horizontal (布) tegak lurus terhadap tiang (建地)", "part": "jitsugi"}, {"n": 90, "jp": "足場全体が倒れないように、建物側に固定するものを何といいますか。", "ro": "Ashiba zentai ga taorenai yō ni, tatemono-gawa ni kotei suru mono o nan to iimasu ka.", "opts": [{"l": "A", "jp": "壁つなぎ", "ro": "kabe tsunagi"}, {"l": "B", "jp": "幅木", "ro": "habaki"}, {"l": "C", "jp": "中さん", "ro": "nakasan"}, {"l": "D", "jp": "腕木", "ro": "udegi"}], "sec": "第6章 建設現場の施工に関する知識", "a": "A", "note": "壁つなぎ menahan perancah agar tidak roboh", "part": "jitsugi"}, {"n": 91, "jp": "鉄筋とコンクリートの表面までの距離を何といいますか。", "ro": "Tekkin to konkurīto no hyōmen made no kyori o nan to iimasu ka.", "opts": [{"l": "A", "jp": "あき", "ro": "aki"}, {"l": "B", "jp": "かぶり厚さ", "ro": "kaburi atsusa"}, {"l": "C", "jp": "間隔", "ro": "kankaku"}, {"l": "D", "jp": "ピッチ", "ro": "pitchi"}], "sec": "第6章 建設現場の施工に関する知識", "a": "B", "note": "かぶり厚さ (tebal selimut beton)", "part": "jitsugi"}, {"n": 92, "jp": "ガス圧接で、加熱範囲の目安は、鉄筋の直径の何倍くらいですか。", "ro": "Gasu assetsu de, kanetsu han'i no meyasu wa, tekkin no chokkei no nan-bai kurai desu ka.", "opts": [{"l": "A", "jp": "半分", "ro": "hanbun"}, {"l": "B", "jp": "1倍", "ro": "ichi-bai"}, {"l": "C", "jp": "5倍", "ro": "go-bai"}, {"l": "D", "jp": "2倍", "ro": "ni-bai"}], "sec": "第6章 建設現場の施工に関する知識", "a": "D", "note": "Area pemanasan ±2× diameter besi", "part": "jitsugi"}, {"n": 93, "jp": "アーク溶接のヒュームを吸い込まないために、着用するものはどれですか。", "ro": "Āku yōsetsu no hyūmu o suikomanai tame ni, chakuyō suru mono wa dore desu ka.", "opts": [{"l": "A", "jp": "サングラス", "ro": "sangurasu"}, {"l": "B", "jp": "手袋", "ro": "tebukuro"}, {"l": "C", "jp": "防塵マスク", "ro": "bōjin masuku"}, {"l": "D", "jp": "帽子", "ro": "bōshi"}], "sec": "第6章 建設現場の施工に関する知識", "a": "C", "note": "Masker debu untuk mencegah hirup fume", "part": "jitsugi"}, {"n": 94, "jp": "生コンを打設する前に送る「先送り材」は、型枠に打ち込んでよいですか。", "ro": "Nama-kon o dasetsu suru mae ni okuru \"saki-okuri-zai\" wa, katawaku ni uchikonde yoi desu ka.", "opts": [{"l": "A", "jp": "型枠に打ち込まず、廃棄する", "ro": "katawaku ni uchikomazu, haiki suru"}, {"l": "B", "jp": "そのまま打ち込む", "ro": "sono mama uchikomu"}, {"l": "C", "jp": "半分だけ打ち込む", "ro": "hanbun dake uchikomu"}, {"l": "D", "jp": "次の日に使う", "ro": "tsugi no hi ni tsukau"}], "sec": "第6章 建設現場の施工に関する知識", "a": "A", "note": "先送り材 dibuang, tidak dicor ke bekisting", "part": "jitsugi"}, {"n": 95, "jp": "新規入場者として紹介されるとき、どのように話しますか。", "ro": "Shinki nyūjōsha toshite shōkai sareru toki, dono yō ni hanashimasu ka.", "opts": [{"l": "A", "jp": "小さな声で話す", "ro": "chiisa na koe de hanasu"}, {"l": "B", "jp": "名前だけ話す", "ro": "namae dake hanasu"}, {"l": "C", "jp": "大きな声で、自分の名前と所属会社をはっきり話す", "ro": "ōkina koe de, jibun no namae to shozoku gaisha o hakkiri hanasu"}, {"l": "D", "jp": "何も話さない", "ro": "nani mo hanasanai"}], "sec": "第7章 安全作業", "a": "C", "note": "Perkenalan dengan suara keras, jelas", "part": "jitsugi"}, {"n": 96, "jp": "安全作業のための基本的な装備に含まれないものはどれですか。", "ro": "Anzen sagyō no tame no kihonteki na sōbi ni fukumarenai mono wa dore desu ka.", "opts": [{"l": "A", "jp": "フルハーネス型墜落制止用器具", "ro": "furu hānesu-gata tsuiraku seishi-yō kigu"}, {"l": "B", "jp": "ヘルメット", "ro": "herumetto"}, {"l": "C", "jp": "安全靴", "ro": "anzengutsu"}, {"l": "D", "jp": "サンダル", "ro": "sandaru"}], "sec": "第7章 安全作業", "a": "D", "note": "Perlengkapan dasar: full harness, helm, hook, sepatu safety", "part": "jitsugi"}, {"n": 97, "jp": "保護メガネは、何から目を守るためのメガネですか。", "ro": "Hogo megane wa, nani kara me o mamoru tame no megane desu ka.", "opts": [{"l": "A", "jp": "雨", "ro": "ame"}, {"l": "B", "jp": "火花・粉じん・有害光線", "ro": "hibana・funjin・yūgai kōsen"}, {"l": "C", "jp": "音", "ro": "oto"}, {"l": "D", "jp": "寒さ", "ro": "samusa"}], "sec": "第7章 安全作業", "a": "B", "note": "Melindungi mata dari percikan api, debu, sinar berbahaya", "part": "jitsugi"}, {"n": 98, "jp": "熱中症を防ぐために、作業員としてすべきことはどれですか。", "ro": "Netchūshō o fusegu tame ni, sagyōin toshite subeki koto wa dore desu ka.", "opts": [{"l": "A", "jp": "休憩時間に涼しい場所で休み、作業の前後に水分や塩分を取る", "ro": "kyūkei jikan ni suzushii basho de yasumi, sagyō no zengo ni suibun ya enbun o toru"}, {"l": "B", "jp": "水を飲まずに我慢する", "ro": "mizu o nomazu ni gaman suru"}, {"l": "C", "jp": "休まず働き続ける", "ro": "yasumazu hataraki tsuzukeru"}, {"l": "D", "jp": "厚い服を着る", "ro": "atsui fuku o kiru"}], "sec": "第7章 安全作業", "a": "A", "note": "Istirahat di tempat sejuk, minum air & garam", "part": "jitsugi"}, {"n": 99, "jp": "万が一、事故が発生した場合、安全を確認した上で、最優先されることは何ですか。", "ro": "Man ga ichi, jiko ga hassei shita baai, anzen o kakunin shita ue de, saiyūsen sareru koto wa nan desu ka.", "opts": [{"l": "A", "jp": "作業の再開", "ro": "sagyō no saikai"}, {"l": "B", "jp": "工事の写真をとること", "ro": "kōji no shashin o toru koto"}, {"l": "C", "jp": "報告書を書くこと", "ro": "hōkokusho o kaku koto"}, {"l": "D", "jp": "被災者の救助", "ro": "hisaisha no kyūjo"}], "sec": "第7章 安全作業", "a": "D", "note": "Utamakan penyelamatan korban", "part": "jitsugi"}, {"n": 100, "jp": "KY活動の手順で、「危険の発見」の次に行うことはどれですか。", "ro": "KY katsudō no tejun de, \"kiken no hakken\" no tsugi ni okonau koto wa dore desu ka.", "opts": [{"l": "A", "jp": "行動目標の決定", "ro": "kōdō mokuhyō no kettei"}, {"l": "B", "jp": "対策の検討", "ro": "taisaku no kentō"}, {"l": "C", "jp": "かけ声をかける", "ro": "kakegoe o kakeru"}, {"l": "D", "jp": "解散する", "ro": "kaisan suru"}], "sec": "第7章 安全作業", "a": "B", "note": "Setelah menemukan bahaya → 対策の検討", "part": "jitsugi"}];
+const $ = (id) => document.getElementById(id);
+const state = { list: [], i: 0, ok: 0, ng: 0, wrong: [], locked: false };
+
+function show(id) {
+  ['start', 'quiz', 'result'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+  window.scrollTo(0, 0);
+}
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function applyRomaji() {
+  document.getElementById('app').classList.toggle('no-ro', !$('optRomaji').checked);
+}
+$('optRomaji').addEventListener('change', applyRomaji);
+
+function start(list) {
+  state.list = $('optShuffle').checked ? shuffle(list) : list.slice();
+  state.i = 0; state.ok = 0; state.ng = 0; state.wrong = [];
+  applyRomaji();
+  show('quiz');
+  render();
+}
+
+function render() {
+  const q = state.list[state.i];
+  const total = state.list.length;
+  state.locked = false;
+  $('pos').textContent = (state.i + 1) + ' / ' + total;
+  $('okc').textContent = state.ok;
+  $('ngc').textContent = state.ng;
+  $('barfill').style.width = (state.i / total * 100) + '%';
+  $('tag').textContent = '第' + q.n + '問 · ' + (q.part === 'riron' ? '理論' : '実技') + ' · ' + q.sec.replace(/^第\d章\s*/, '');
+  $('qjp').textContent = q.jp;
+  $('qro').textContent = q.ro;
+  const box = $('choices');
+  box.innerHTML = '';
+  q.opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'choice';
+    b.dataset.l = o.l;
+    const l = document.createElement('span'); l.className = 'ltr'; l.textContent = o.l;
+    const t = document.createElement('span'); t.className = 'txt';
+    const jp = document.createElement('span'); jp.className = 'jp'; jp.textContent = o.jp;
+    const ro = document.createElement('span'); ro.className = 'ro'; ro.textContent = o.ro;
+    t.append(jp, ro);
+    b.append(l, t);
+    b.addEventListener('click', () => answer(o.l));
+    box.appendChild(b);
+  });
+  $('fb').className = 'fb hidden';
+  $('fb').textContent = '';
+  $('next').disabled = true;
+  $('next').textContent = state.i === total - 1 ? 'Lihat hasil' : 'Lanjut';
+}
+
+function answer(letter) {
+  if (state.locked) return;
+  state.locked = true;
+  const q = state.list[state.i];
+  const good = letter === q.a;
+  if (good) state.ok++; else { state.ng++; state.wrong.push(q); }
+  document.querySelectorAll('#choices .choice').forEach(b => {
+    b.disabled = true;
+    const l = b.dataset.l;
+    const mark = b.querySelector('.ltr');
+    if (l === q.a) { b.classList.add('ok'); mark.textContent = '✓'; }
+    else if (l === letter) { b.classList.add('ng'); mark.textContent = '✗'; }
+    else b.classList.add('dim');
+  });
+  const fb = $('fb');
+  fb.className = 'fb ' + (good ? 'ok' : 'ng');
+  fb.textContent = '';
+  const h = document.createElement('b');
+  h.textContent = good ? 'Benar! 正解 (seikai)' : 'Salah. Jawaban yang benar: ' + q.a;
+  const p = document.createElement('span');
+  p.textContent = q.note;
+  fb.append(h, p);
+  $('okc').textContent = state.ok;
+  $('ngc').textContent = state.ng;
+  $('barfill').style.width = ((state.i + 1) / state.list.length * 100) + '%';
+  $('next').disabled = false;
+  $('next').focus({ preventScroll: true });
+}
+
+function next() {
+  if (!state.locked) return;
+  if (state.i < state.list.length - 1) { state.i++; render(); window.scrollTo(0, 0); }
+  else finish();
+}
+
+function finish() {
+  const total = state.list.length;
+  const pct = Math.round(state.ok / total * 100);
+  const big = $('rbig');
+  big.textContent = state.ok + ' / ' + total;
+  big.className = 'big ' + (pct >= 60 ? 'good' : 'bad');
+  $('rsub').textContent = pct + '% benar' + (pct >= 60 ? ' — bagus, lanjutkan!' : ' — coba ulangi soal yang salah.');
+  const wrap = $('reviewWrap');
+  wrap.innerHTML = '';
+  if (!state.wrong.length) {
+    const d = document.createElement('div');
+    d.className = 'allok';
+    d.textContent = 'Semua benar! 全問正解 (zenmon seikai)';
+    wrap.appendChild(d);
+    $('retryWrong').classList.add('hidden');
+  } else {
+    $('retryWrong').classList.remove('hidden');
+    const ul = document.createElement('ul');
+    ul.className = 'review';
+    state.wrong.forEach(q => {
+      const li = document.createElement('li');
+      const a = document.createElement('p'); a.className = 'rq'; a.textContent = q.n + '. ' + q.jp;
+      const r = document.createElement('p'); r.className = 'rr'; r.textContent = q.ro;
+      const c = q.opts.find(o => o.l === q.a);
+      const x = document.createElement('p'); x.className = 'ra'; x.textContent = '✓ ' + c.l + '. ' + c.jp;
+      const y = document.createElement('p'); y.className = 'rm'; y.textContent = q.note;
+      li.append(a, r, x, y);
+      ul.appendChild(li);
+    });
+    wrap.appendChild(ul);
+  }
+  show('result');
+}
+
+document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => {
+  const m = b.dataset.mode;
+  start(m === 'all' ? DATA : DATA.filter(q => q.part === m));
+}));
+$('next').addEventListener('click', next);
+$('quit').addEventListener('click', () => show('start'));
+$('restart').addEventListener('click', () => show('start'));
+$('retryWrong').addEventListener('click', () => start(state.wrong));
+
+document.addEventListener('keydown', (e) => {
+  if ($('quiz').classList.contains('hidden')) return;
+  const k = e.key.toUpperCase();
+  if (['A', 'B', 'C', 'D'].includes(k) && !state.locked) answer(k);
+  else if (e.key === 'Enter' && state.locked) { e.preventDefault(); next(); }
+});
+</script>
+</body>
+</html>
