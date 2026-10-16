@@ -137,8 +137,22 @@ public class MainActivity extends Activity {
                 }
             }
         });
+        NewsJob.schedule(this);
+        if (android.os.Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1);
+        }
         Uri d = getIntent() == null ? null : getIntent().getData();
         web.loadUrl(d != null && inApp(d) ? d.toString() : HOME);
+    }
+
+    @Override
+    protected void onNewIntent(Intent i) {
+        super.onNewIntent(i);
+        Uri d = i == null ? null : i.getData();
+        if (d != null && inApp(d) && web != null) {
+            web.loadUrl(d.toString());
+        }
     }
 
     @Override

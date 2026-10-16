@@ -122,6 +122,19 @@ public class PengaturanActivity extends Activity {
         });
         root.addView(reset);
 
+        root.addView(text("Notifikasi", 16, true, 0xFF1B2440));
+        android.widget.CheckBox cb = new android.widget.CheckBox(this);
+        cb.setText("Beri tahu kalau ada artikel baru");
+        cb.setChecked(getSharedPreferences("kartu", MODE_PRIVATE).getBoolean("notif", true));
+        cb.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                getSharedPreferences("kartu", MODE_PRIVATE).edit().putBoolean("notif", on).apply();
+            }
+        });
+        root.addView(cb);
+        root.addView(text("Dicek sekitar tiap 30 menit selama HP tersambung internet.", 12, false, 0xFF6B7186));
+
         root.addView(text("Offline", 16, true, 0xFF1B2440));
         root.addView(text("Simpan bushu, JLPT, Jawa, Sunda, Bali dan halaman lain ke HP supaya bisa dibuka tanpa internet. Berita tetap butuh internet.", 13, false, 0xFF6B7186));
         status = text(statusText(), 13, false, 0xFF1B2440);
