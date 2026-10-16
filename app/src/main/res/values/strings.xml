@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Qategori Kartu</string>
+    <string name="widget_kotoba_name">Kartu kotoba</string>
+    <string name="widget_kanji_name">Kanji hari ini</string>
+    <string name="widget_kotoba_desc">Kartu hapalan kotoba JLPT. Ketuk kartu untuk melihat arti.</string>
+    <string name="widget_kanji_desc">Satu kanji baru tiap hari.</string>
+</resources>
