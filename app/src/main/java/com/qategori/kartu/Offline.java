@@ -1,6 +1,8 @@
 package com.qategori.kartu;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.webkit.WebResourceResponse;
 
@@ -68,7 +70,7 @@ final class Offline {
         if (mine && mainFrame) {
             return true;
         }
-        return path.matches(".*\\.(js|css|json|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|txt|csv)$");
+        return path.matches(".*\\.(js|css|json|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|txt|csv|html|htm)$");
     }
 
     private static File dir(Context c) {
@@ -79,7 +81,48 @@ final class Offline {
         return d;
     }
 
+    private static String norm(String s) {
+        try {
+            Uri u = Uri.parse(s);
+            String h = u.getHost() == null ? "" : u.getHost().toLowerCase();
+            if (h.startsWith("www.")) {
+                h = h.substring(4);
+            }
+            String q = u.getEncodedQuery();
+            StringBuilder qs = new StringBuilder();
+            if (q != null) {
+                for (String p : q.split("&")) {
+                    if (p.length() > 0 && !p.equals("m=0") && !p.equals("m=1")) {
+                        qs.append(qs.length() == 0 ? "?" : "&").append(p);
+                    }
+                }
+            }
+            return h + (u.getEncodedPath() == null ? "" : u.getEncodedPath()) + qs;
+        } catch (Exception e) {
+            return s;
+        }
+    }
+
+    static boolean online(Context c) {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) c.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo n = cm.getActiveNetworkInfo();
+            return n != null && n.isConnected();
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** Halaman .html yang diambil lewat fetch oleh situs: saat online dibiarkan WebView sendiri, saat offline pakai salinan. */
+    static boolean offlineOnly(Uri u, boolean mainFrame) {
+        String h = u.getHost() == null ? "" : u.getHost();
+        boolean site = h.equals("qategori.com") || h.endsWith(".qategori.com");
+        String p = u.getPath() == null ? "" : u.getPath().toLowerCase();
+        return site && !mainFrame && (p.endsWith(".html") || p.endsWith(".htm"));
+    }
+
     private static String hash(String s) {
+        s = norm(s);
         try {
             byte[] b = MessageDigest.getInstance("SHA-1").digest(s.getBytes("UTF-8"));
             StringBuilder sb = new StringBuilder();
@@ -132,20 +175,27 @@ final class Offline {
         }
     }
 
-    private static WebResourceResponse build(String mime, String enc, byte[] body) {
+    private static WebResourceResponse build(String mime, String enc, byte[] body, Map<String, String> rh) {
         Map<String, String> h = new HashMap<String, String>();
-        h.put("Access-Control-Allow-Origin", "*");
+        String origin = rh == null ? null : rh.get("Origin");
+        if (origin != null && !origin.equals("null")) {
+            h.put("Access-Control-Allow-Origin", origin);
+            h.put("Access-Control-Allow-Credentials", "true");
+            h.put("Vary", "Origin");
+        } else {
+            h.put("Access-Control-Allow-Origin", "*");
+        }
         return new WebResourceResponse(mime, enc, 200, "OK", h, new ByteArrayInputStream(body));
     }
 
     /** Salinan di HP, atau null kalau belum ada. */
-    static WebResourceResponse cached(Context c, String url, int depth) {
+    static WebResourceResponse cached(Context c, String url, int depth, Map<String, String> rh) {
         try {
             String k = hash(url);
             File r = new File(dir(c), k + ".r");
             if (r.exists() && depth < 4) {
                 String to = new String(readAll(new FileInputStream(r)), "UTF-8");
-                return cached(c, to, depth + 1);
+                return cached(c, to, depth + 1, rh);
             }
             File b = new File(dir(c), k + ".b");
             File m = new File(dir(c), k + ".m");
@@ -153,7 +203,7 @@ final class Offline {
                 return null;
             }
             String[] mm = new String(readAll(new FileInputStream(m)), "UTF-8").split("\n", -1);
-            return build(mm[0], mm.length > 1 && mm[1].length() > 0 ? mm[1] : null, readAll(new FileInputStream(b)));
+            return build(mm[0], mm.length > 1 && mm[1].length() > 0 ? mm[1] : null, readAll(new FileInputStream(b)), rh);
         } catch (Exception e) {
             return null;
         }
@@ -161,6 +211,9 @@ final class Offline {
 
     /** Internet dulu (lalu simpan); kalau gagal pakai salinan. Return null = biarkan WebView mengurus sendiri. */
     static WebResourceResponse fetch(Context c, String url, Map<String, String> reqHeaders) {
+        if (!online(c)) {
+            return cached(c, url, 0, reqHeaders);
+        }
         try {
             HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
             con.setInstanceFollowRedirects(false);
@@ -186,7 +239,7 @@ final class Offline {
                 return null;
             }
             if (code != 200) {
-                WebResourceResponse w = cached(c, url, 0);
+                WebResourceResponse w = cached(c, url, 0, reqHeaders);
                 return w;
             }
             String ct = con.getContentType();
@@ -206,9 +259,9 @@ final class Offline {
             new File(dir(c), k + ".r").delete();
             write(new File(dir(c), k + ".b"), body);
             write(new File(dir(c), k + ".m"), (mime + "\n" + (enc == null ? "" : enc)).getBytes("UTF-8"));
-            return build(mime, enc, body);
+            return build(mime, enc, body, reqHeaders);
         } catch (Exception e) {
-            return cached(c, url, 0);
+            return cached(c, url, 0, reqHeaders);
         }
     }
 }

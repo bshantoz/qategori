@@ -114,6 +114,9 @@ public class MainActivity extends Activity {
                 if (!"GET".equals(r.getMethod()) || !Offline.cacheable(r.getUrl(), r.isForMainFrame())) {
                     return null;
                 }
+                if (Offline.offlineOnly(r.getUrl(), r.isForMainFrame()) && Offline.online(MainActivity.this)) {
+                    return null;
+                }
                 return Offline.fetch(MainActivity.this, r.getUrl().toString(), r.getRequestHeaders());
             }
 
