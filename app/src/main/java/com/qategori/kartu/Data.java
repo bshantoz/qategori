@@ -169,4 +169,19 @@ final class Data {
     static void reset(Context c, String lv) {
         sp(c).edit().remove("done_" + lv).remove("pos_" + lv).remove("seed_" + lv).putBoolean("rev", false).apply();
     }
+
+    /** Gabung hapalan dengan situs (3 arah): tambahan widget masuk ke situs, hapusan di salah satu sisi ikut. */
+    static synchronized Set<String> merge(Context c, String lv, Set<String> web) {
+        Set<String> nat = done(c, lv);
+        Set<String> base = new HashSet<String>(sp(c).getStringSet("base_" + lv, new HashSet<String>()));
+        Set<String> added = new HashSet<String>(nat);
+        added.removeAll(base);
+        Set<String> removed = new HashSet<String>(base);
+        removed.removeAll(nat);
+        Set<String> m = new HashSet<String>(web);
+        m.addAll(added);
+        m.removeAll(removed);
+        sp(c).edit().putStringSet("done_" + lv, m).putStringSet("base_" + lv, new HashSet<String>(m)).apply();
+        return m;
+    }
 }

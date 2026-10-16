@@ -1,118 +1,157 @@
 package com.qategori.kartu;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Typeface;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
-import android.widget.ScrollView;
-import android.widget.TextView;
+import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
-/** Layar pengaturan sederhana: pilih level kartu kotoba, ulangi hapalan, buka situs. */
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashSet;
+import java.util.Set;
+
+/** Membuka qategori.com di dalam aplikasi, dengan cache offline dan sinkron hapalan dengan widget. */
 public class MainActivity extends Activity {
-    private float density = 1f;
+    static final String HOME = "https://qategori.com/";
+    private WebView web;
 
-    @Override
-    protected void onCreate(Bundle b) {
-        super.onCreate(b);
-        density = getResources().getDisplayMetrics().density;
-        build();
-    }
+    private static final String SYNC_JS = "(function(){try{if(!window.QApp)return;var L=['n5','n4','n3','n2','n1'],o={};"
+            + "L.forEach(function(l){var a=[];try{a=JSON.parse(localStorage.getItem(l+'_kotoba_archived_v1')||'[]')}catch(e){}"
+            + "o[l]=Array.isArray(a)?a:[]});"
+            + "var m=JSON.parse(QApp.sync(JSON.stringify(o)));"
+            + "L.forEach(function(l){var k=l+'_kotoba_archived_v1',nv=JSON.stringify(m[l]);"
+            + "if(localStorage.getItem(k)!==nv){localStorage.setItem(k,nv)}})}catch(e){}})();";
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        build();
-    }
-
-    private int dp(int v) {
-        return (int) (v * density);
-    }
-
-    private TextView text(String s, int sp, boolean bold, int color) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTextSize(sp);
-        t.setTextColor(color);
-        if (bold) {
-            t.setTypeface(null, Typeface.BOLD);
+    public final class Bridge {
+        @JavascriptInterface
+        public String sync(String json) {
+            try {
+                JSONObject in = new JSONObject(json);
+                JSONObject out = new JSONObject();
+                for (String lv : Data.LV) {
+                    Set<String> w = new HashSet<String>();
+                    JSONArray a = in.optJSONArray(lv);
+                    if (a != null) {
+                        for (int i = 0; i < a.length(); i++) {
+                            String s = a.optString(i, "");
+                            if (s.length() > 0) {
+                                w.add(s);
+                            }
+                        }
+                    }
+                    Set<String> m = Data.merge(MainActivity.this, lv, w);
+                    JSONArray r = new JSONArray();
+                    for (String s : m) {
+                        r.put(s);
+                    }
+                    out.put(lv, r);
+                }
+                KotobaWidget.refresh(MainActivity.this);
+                return out.toString();
+            } catch (Exception e) {
+                return json;
+            }
         }
-        t.setPadding(0, dp(8), 0, dp(4));
-        return t;
-    }
 
-    private void build() {
-        ScrollView sv = new ScrollView(this);
-        sv.setBackgroundColor(0xFFFDFBF7);
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(20), dp(40), dp(20), dp(24));
-        sv.addView(root);
-
-        root.addView(text("Qategori Kartu", 26, true, 0xFF1B2440));
-        root.addView(text("Widget kartu hapalan kotoba dan kanji hari ini untuk layar utama HP.", 14, false, 0xFF6B7186));
-
-        root.addView(text("Cara memasang widget", 16, true, 0xFF1B2440));
-        root.addView(text("1. Tahan bagian kosong layar utama, lalu pilih Widget.\n2. Cari \"Qategori Kartu\".\n3. Seret \"Kartu kotoba\" atau \"Kanji hari ini\" ke layar utama.", 14, false, 0xFF1B2440));
-
-        root.addView(text("Level kartu kotoba", 16, true, 0xFF1B2440));
-        RadioGroup g = new RadioGroup(this);
-        String cur = Data.level(this);
-        for (final String lv : Data.LV) {
-            RadioButton rb = new RadioButton(this);
-            rb.setId(View.generateViewId());
-            rb.setText(lv.toUpperCase() + " · " + Data.done(this, lv).size() + "/" + Data.words(this, lv).length() + " hapal");
-            rb.setTextSize(15);
-            rb.setChecked(lv.equals(cur));
-            rb.setOnClickListener(new View.OnClickListener() {
+        @JavascriptInterface
+        public void openSettings() {
+            runOnUiThread(new Runnable() {
                 @Override
-                public void onClick(View v) {
-                    Data.setLevel(MainActivity.this, lv);
-                    KotobaWidget.refresh(MainActivity.this);
+                public void run() {
+                    startActivity(new Intent(MainActivity.this, PengaturanActivity.class));
                 }
             });
-            g.addView(rb);
         }
-        root.addView(g);
+    }
 
-        Button reset = new Button(this);
-        reset.setText("Ulangi hapalan level ini dari awal");
-        reset.setOnClickListener(new View.OnClickListener() {
+    private static boolean inApp(Uri u) {
+        String h = u.getHost();
+        return h != null && (h.equals("qategori.com") || h.endsWith(".qategori.com") || h.equals("bshantoz.github.io"));
+    }
+
+    @Override
+    @SuppressWarnings("SetJavaScriptEnabled")
+    protected void onCreate(Bundle b) {
+        super.onCreate(b);
+        getWindow().setStatusBarColor(Color.WHITE);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        web = new WebView(this);
+        web.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        setContentView(web);
+        WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setDatabaseEnabled(true);
+        s.setMediaPlaybackRequiresUserGesture(false);
+        s.setUserAgentString(s.getUserAgentString() + " QategoriApp/2");
+        web.addJavascriptInterface(new Bridge(), "QApp");
+        web.setWebViewClient(new WebViewClient() {
             @Override
-            public void onClick(View v) {
-                new AlertDialog.Builder(MainActivity.this)
-                        .setMessage("Hapus tanda hapal untuk level ini?")
-                        .setPositiveButton("Ya", new android.content.DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(android.content.DialogInterface d, int w) {
-                                Data.reset(MainActivity.this, Data.level(MainActivity.this));
-                                KotobaWidget.refresh(MainActivity.this);
-                                build();
-                            }
-                        })
-                        .setNegativeButton("Batal", null)
-                        .show();
+            public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
+                Uri u = r.getUrl();
+                if (inApp(u)) {
+                    return false;
+                }
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, u));
+                } catch (Exception ignored) {
+                }
+                return true;
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
+                if (!"GET".equals(r.getMethod()) || !Offline.cacheable(r.getUrl())) {
+                    return null;
+                }
+                return Offline.fetch(MainActivity.this, r.getUrl().toString(), r.getRequestHeaders());
+            }
+
+            @Override
+            public void onPageFinished(WebView v, String url) {
+                if (url != null && url.startsWith("https://") && inApp(Uri.parse(url))) {
+                    v.evaluateJavascript(SYNC_JS, null);
+                }
+            }
+
+            @Override
+            public void onReceivedError(WebView v, WebResourceRequest r, android.webkit.WebResourceError e) {
+                if (r.isForMainFrame()) {
+                    v.loadDataWithBaseURL(null, "<meta name=viewport content='width=device-width,initial-scale=1'>"
+                            + "<body style='font-family:sans-serif;text-align:center;padding:60px 20px;color:#1b2440'>"
+                            + "<h2>Butuh internet</h2><p>Halaman ini belum tersimpan offline.<br>Sambungkan internet lalu coba lagi.</p>"
+                            + "<p><a href='" + HOME + "'>Coba lagi</a></p></body>", "text/html", "UTF-8", null);
+                }
             }
         });
-        root.addView(reset);
+        Uri d = getIntent() == null ? null : getIntent().getData();
+        web.loadUrl(d != null && inApp(d) ? d.toString() : HOME);
+    }
 
-        Button open = new Button(this);
-        open.setText("Buka Qategori");
-        open.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://qategori.com")));
-            }
-        });
-        root.addView(open);
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (web != null) {
+            web.evaluateJavascript(SYNC_JS, null);
+        }
+    }
 
-        root.addView(text("Catatan: hapalan di aplikasi ini tersimpan di HP dan belum tersambung dengan hapalan di situs.", 12, false, 0xFF6B7186));
-        setContentView(sv);
+    @Override
+    public void onBackPressed() {
+        if (web != null && web.canGoBack()) {
+            web.goBack();
+        } else {
+            super.onBackPressed();
+        }
     }
 }
