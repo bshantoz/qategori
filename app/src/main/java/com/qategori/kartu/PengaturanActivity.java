@@ -274,7 +274,7 @@ public class PengaturanActivity extends Activity {
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
-                if (!"GET".equals(r.getMethod()) || !Offline.cacheable(r.getUrl())) {
+                if (!"GET".equals(r.getMethod()) || !Offline.cacheable(r.getUrl(), r.isForMainFrame())) {
                     return null;
                 }
                 return Offline.fetch(PengaturanActivity.this, r.getUrl().toString(), r.getRequestHeaders());

@@ -27,24 +27,48 @@ final class Offline {
     private Offline() {
     }
 
-    static boolean cacheable(Uri u) {
-        String h = u.getHost();
-        String s = u.toString();
-        if (h == null || !"https".equals(u.getScheme())) {
-            return false;
-        }
-        if (s.contains("/feeds/") || s.contains("alt=json") || s.contains("callback=") || s.contains("/comment")) {
-            return false;
-        }
-        if (u.getPath() != null && u.getPath().toLowerCase().matches(".*\\.(mp3|wav|ogg|m4a|mp4|webm|zip)$")) {
-            return false;
-        }
-        for (String x : HOSTS) {
+    private static final String[] OPEN = {
+            "github.io", "gstatic.com", "blogblog.com", "fonts.googleapis.com", "cdnjs.cloudflare.com", "cdn.jsdelivr.net", "unpkg.com"
+    };
+
+    private static boolean hostIn(String h, String[] l) {
+        for (String x : l) {
             if (h.equals(x) || h.endsWith("." + x)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Hanya simpan yang aman: halaman yang dibuka langsung, file statis (js, css, json, gambar, font),
+     * dan semua file dari github.io/CDN. Permintaan dinamis Blogger (berita, label, pencarian) tidak disentuh.
+     */
+    static boolean cacheable(Uri u, boolean mainFrame) {
+        String h = u.getHost();
+        String path = u.getPath() == null ? "" : u.getPath().toLowerCase();
+        if (h == null || !"https".equals(u.getScheme())) {
+            return false;
+        }
+        if (path.matches(".*\\.(mp3|wav|ogg|m4a|mp4|webm|zip)$")) {
+            return false;
+        }
+        String s = u.toString();
+        if (s.contains("/feeds/") || s.contains("alt=json") || s.contains("callback=")) {
+            return false;
+        }
+        if (hostIn(h, OPEN)) {
+            return true;
+        }
+        boolean mine = h.equals("qategori.com") || h.endsWith(".qategori.com");
+        boolean other = hostIn(h, new String[]{"blogger.com", "blogspot.com", "googleusercontent.com"});
+        if (!mine && !other) {
+            return false;
+        }
+        if (mine && mainFrame) {
+            return true;
+        }
+        return path.matches(".*\\.(js|css|json|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|txt|csv)$");
     }
 
     private static File dir(Context c) {
