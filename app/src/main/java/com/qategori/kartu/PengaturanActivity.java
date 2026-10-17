@@ -31,6 +31,37 @@ import java.util.regex.Pattern;
 
 /** Layar pengaturan sederhana: pilih level kartu kotoba, ulangi hapalan, buka situs. */
 public class PengaturanActivity extends Activity {
+    private static final String[] PAGES = {
+            "/p/bali.html",
+            "/p/bisnis-karir.html",
+            "/p/bookmark.html",
+            "/p/building-cleaning.html",
+            "/p/contact.html",
+            "/p/disclaimer.html",
+            "/p/jawa.html",
+            "/p/jidosha-seibi.html",
+            "/p/kebijakan-pengembalian-dana-refund.html",
+            "/p/kontruksi.html",
+            "/p/level-materi-jlpt.html",
+            "/p/manufaktur.html",
+            "/p/materi-dan-kuis-kanji-metode-bushu.html",
+            "/p/materi-dan-soal-tg2-jlpt.html",
+            "/p/materi-jlpt-n1.html",
+            "/p/materi-jlpt-n2.html",
+            "/p/materi-jlpt-n3.html",
+            "/p/materi-jlpt-n4.html",
+            "/p/materi-jlpt-n5.html",
+            "/p/pelayanan-dan-pabrik-makanan.html",
+            "/p/perhotelan.html",
+            "/p/perikanan.html",
+            "/p/permainan.html",
+            "/p/pertanian.html",
+            "/p/pertanyaan-yang-sering-ditanyakan-faq.html",
+            "/p/privacy-policy.html",
+            "/p/sunda.html",
+            "/p/syarat-ketentuan.html",
+            "/p/tentang.html"
+    };
     private float density = 1f;
     private TextView status;
     private Button unduh;
@@ -193,18 +224,10 @@ public class PengaturanActivity extends Activity {
 
     private String httpText(String url) {
         try {
-            WebResourceResponse r = Offline.fetch(this, url, null);
-            if (r == null) {
-                return "";
-            }
-            InputStream in = r.getData();
-            ByteArrayOutputStream o = new ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) > 0) {
-                o.write(buf, 0, n);
-            }
-            return o.toString("UTF-8");
+            java.util.Map<String, String> hd = new java.util.HashMap<String, String>();
+            hd.put("User-Agent", android.webkit.WebSettings.getDefaultUserAgent(this));
+            byte[] b = Offline.get(this, url, hd);
+            return b == null ? "" : new String(b, "UTF-8");
         } catch (Exception e) {
             return "";
         }
@@ -240,7 +263,7 @@ public class PengaturanActivity extends Activity {
                         }
                     }
                     for (int i = 0; i < files.size(); i++) {
-                        Offline.fetch(PengaturanActivity.this, files.get(i), null);
+                        Offline.get(PengaturanActivity.this, files.get(i), null);
                         if (i % 5 == 0) {
                             set("Mengunduh materi " + (i + 1) + "/" + files.size() + "...");
                         }
@@ -257,7 +280,14 @@ public class PengaturanActivity extends Activity {
                     }
                     java.util.Map<String, String> hd = new java.util.HashMap<String, String>();
                     hd.put("User-Agent", android.webkit.WebSettings.getDefaultUserAgent(PengaturanActivity.this));
-                    Offline.fetch(PengaturanActivity.this, u, hd);
+                    Offline.get(PengaturanActivity.this, u, hd);
+                }
+                java.util.Map<String, String> hd2 = new java.util.HashMap<String, String>();
+                hd2.put("User-Agent", android.webkit.WebSettings.getDefaultUserAgent(PengaturanActivity.this));
+                for (int i = 0; i < PAGES.length; i++) {
+                    String u = "https://qategori.com" + PAGES[i];
+                    set("Mengunduh halaman " + (i + 1) + "/" + PAGES.length + "...");
+                    Offline.get(PengaturanActivity.this, u, hd2);
                 }
                 runOnUiThread(new Runnable() {
                     @Override

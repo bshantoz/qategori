@@ -188,6 +188,49 @@ final class Offline {
         return new WebResourceResponse(mime, enc, 200, "OK", h, new ByteArrayInputStream(body));
     }
 
+    /** Salinan bawaan aplikasi (dibundel saat build): materi nihongo dan halaman situs. */
+    static WebResourceResponse asset(Context c, String url) {
+        try {
+            Uri u = Uri.parse(url);
+            String h = u.getHost() == null ? "" : u.getHost().toLowerCase();
+            if (h.startsWith("www.")) {
+                h = h.substring(4);
+            }
+            String p = u.getPath() == null ? "" : u.getPath();
+            String a;
+            if (h.equals("bshantoz.github.io") && p.startsWith("/nihongo/")) {
+                a = "web/nihongo/" + p.substring(9);
+            } else if (h.equals("qategori.com")) {
+                if (p.isEmpty() || p.equals("/")) {
+                    p = "/index.html";
+                }
+                a = "web/site" + p;
+            } else {
+                return null;
+            }
+            byte[] b;
+            try (InputStream in = c.getAssets().open(a)) {
+                b = readAll(in);
+            }
+            String ext = a.substring(a.lastIndexOf('.') + 1).toLowerCase();
+            String mime = "text/plain";
+            if (ext.equals("html") || ext.equals("htm")) {
+                mime = "text/html";
+            } else if (ext.equals("js")) {
+                mime = "application/javascript";
+            } else if (ext.equals("json")) {
+                mime = "application/json";
+            } else if (ext.equals("css")) {
+                mime = "text/css";
+            } else if (ext.equals("svg")) {
+                mime = "image/svg+xml";
+            }
+            return build(mime, "UTF-8", b, null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /** Salinan di HP, atau null kalau belum ada. */
     static WebResourceResponse cached(Context c, String url, int depth, Map<String, String> rh) {
         try {
@@ -200,7 +243,7 @@ final class Offline {
             File b = new File(dir(c), k + ".b");
             File m = new File(dir(c), k + ".m");
             if (!b.exists() || !m.exists()) {
-                return null;
+                return asset(c, url);
             }
             String[] mm = new String(readAll(new FileInputStream(m)), "UTF-8").split("\n", -1);
             return build(mm[0], mm.length > 1 && mm[1].length() > 0 ? mm[1] : null, readAll(new FileInputStream(b)), rh);
@@ -263,5 +306,54 @@ final class Offline {
         } catch (Exception e) {
             return cached(c, url, 0, reqHeaders);
         }
+    }
+
+    /** Unduh langsung (ikut pindah alamat, misalnya ke www) dan simpan di HP. Return isi file atau null. */
+    static byte[] get(Context c, String url, Map<String, String> rh) {
+        String cur = url;
+        try {
+            for (int hop = 0; hop < 5; hop++) {
+                HttpURLConnection con = (HttpURLConnection) new URL(cur).openConnection();
+                con.setInstanceFollowRedirects(false);
+                con.setConnectTimeout(8000);
+                con.setReadTimeout(15000);
+                if (rh != null && rh.get("User-Agent") != null) {
+                    con.setRequestProperty("User-Agent", rh.get("User-Agent"));
+                }
+                int code = con.getResponseCode();
+                if (code >= 300 && code < 400) {
+                    String loc = con.getHeaderField("Location");
+                    if (loc == null) {
+                        return null;
+                    }
+                    cur = new URL(new URL(cur), loc).toString();
+                    continue;
+                }
+                if (code != 200) {
+                    return null;
+                }
+                String ct = con.getContentType();
+                String mime = "application/octet-stream";
+                String enc = null;
+                if (ct != null) {
+                    String[] p = ct.split(";");
+                    mime = p[0].trim();
+                    for (int i = 1; i < p.length; i++) {
+                        String q = p[i].trim();
+                        if (q.toLowerCase().startsWith("charset=")) {
+                            enc = q.substring(8).trim();
+                        }
+                    }
+                }
+                byte[] body = readAll(con.getInputStream());
+                String k = hash(url);
+                new File(dir(c), k + ".r").delete();
+                write(new File(dir(c), k + ".b"), body);
+                write(new File(dir(c), k + ".m"), (mime + "\n" + (enc == null ? "" : enc)).getBytes("UTF-8"));
+                return body;
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 }

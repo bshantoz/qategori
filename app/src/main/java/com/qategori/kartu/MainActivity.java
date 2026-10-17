@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
@@ -13,6 +16,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -24,6 +29,17 @@ import java.util.Set;
 public class MainActivity extends Activity {
     static final String HOME = "https://qategori.com/";
     private WebView web;
+    private TextView ind;
+    private volatile boolean canPull = true;
+    private float downY;
+    private boolean pulling;
+
+    /** Tandai apakah sentuhan dimulai di area yang boleh ditarik untuk muat ulang (bukan di daftar yang sedang digulir atau jendela mengambang). */
+    private static final String PULL_JS = "(function(){if(window.__qpull||!window.QApp)return;window.__qpull=1;"
+            + "document.addEventListener('touchstart',function(e){var n=e.target,ok=true;"
+            + "while(n&&n.nodeType===1){if(n.scrollTop>0){ok=false;break}"
+            + "var p=getComputedStyle(n).position;if(p==='fixed'&&n!==document.body){ok=false;break}n=n.parentElement}"
+            + "QApp.pull(ok)},{passive:true})})();";
 
     private static final String SYNC_JS = "(function(){try{if(!window.QApp)return;var L=['n5','n4','n3','n2','n1'],o={};"
             + "L.forEach(function(l){var a=[];try{a=JSON.parse(localStorage.getItem(l+'_kotoba_archived_v1')||'[]')}catch(e){}"
@@ -64,6 +80,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void pull(boolean ok) {
+            canPull = ok;
+        }
+
+        @JavascriptInterface
         public void openSettings() {
             runOnUiThread(new Runnable() {
                 @Override
@@ -87,7 +108,64 @@ public class MainActivity extends Activity {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         web = new WebView(this);
         web.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        setContentView(web);
+        FrameLayout root = new FrameLayout(this);
+        root.addView(web);
+        final float dens = getResources().getDisplayMetrics().density;
+        ind = new TextView(this);
+        ind.setTextSize(12);
+        ind.setTextColor(0xFF1B2440);
+        ind.setPadding((int) (14 * dens), (int) (7 * dens), (int) (14 * dens), (int) (7 * dens));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(0xFFFFFFFF);
+        bg.setStroke((int) dens, 0xFFD8DCE8);
+        bg.setCornerRadius(40 * dens);
+        ind.setBackground(bg);
+        ind.setElevation(6 * dens);
+        ind.setVisibility(View.GONE);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        lp.topMargin = (int) (-40 * dens);
+        root.addView(ind, lp);
+        setContentView(root);
+        final float thr = 110 * dens;
+        web.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent e) {
+                switch (e.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        downY = e.getRawY();
+                        pulling = web.getScrollY() == 0;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        if (pulling && web.getScrollY() == 0 && canPull) {
+                            float dy = e.getRawY() - downY;
+                            if (dy > 12 * dens) {
+                                ind.setVisibility(View.VISIBLE);
+                                ind.setTranslationY(Math.min(dy * 0.5f, 90 * dens) + 40 * dens);
+                                ind.setText(dy > thr ? "Lepas untuk muat ulang" : "Tarik untuk muat ulang");
+                            } else {
+                                ind.setVisibility(View.GONE);
+                            }
+                        } else {
+                            pulling = false;
+                            ind.setVisibility(View.GONE);
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        if (pulling && canPull && web.getScrollY() == 0 && e.getRawY() - downY > thr
+                                && e.getActionMasked() == MotionEvent.ACTION_UP) {
+                            web.reload();
+                        }
+                        pulling = false;
+                        ind.setVisibility(View.GONE);
+                        break;
+                    default:
+                        break;
+                }
+                return false;
+            }
+        });
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -124,6 +202,7 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView v, String url) {
                 if (url != null && url.startsWith("https://") && inApp(Uri.parse(url))) {
                     v.evaluateJavascript(SYNC_JS, null);
+                    v.evaluateJavascript(PULL_JS, null);
                 }
             }
 
