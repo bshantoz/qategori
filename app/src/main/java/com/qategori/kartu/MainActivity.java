@@ -2,6 +2,7 @@ package com.qategori.kartu;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -35,6 +36,37 @@ public class MainActivity extends Activity {
     private boolean pulling;
 
     /** Tandai apakah sentuhan dimulai di area yang boleh ditarik untuk muat ulang (bukan di daftar yang sedang digulir atau jendela mengambang). */
+    private int barColor = 0;
+
+    /** Samakan warna status bar dan navigation bar dengan warna latar situs (ikut tombol tema). */
+    private static final String BAR_JS = "(function(){if(window.__qbar||!window.QApp)return;window.__qbar=1;"
+            + "function go(){try{var c=getComputedStyle(document.body).backgroundColor;"
+            + "if(!c||c==='transparent'||/,\\s*0\\)$/.test(c)){c=getComputedStyle(document.documentElement).backgroundColor}QApp.bar(c)}catch(e){}}"
+            + "go();var o={attributes:true,attributeFilter:['class','data-theme','style']};"
+            + "new MutationObserver(go).observe(document.documentElement,o);new MutationObserver(go).observe(document.body,o);"
+            + "if(window.matchMedia){try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',go)}catch(e){}}"
+            + "setInterval(go,1500)})();";
+
+    private void applyBar(int color) {
+        if (color == barColor) {
+            return;
+        }
+        barColor = color;
+        getWindow().setStatusBarColor(color);
+        getWindow().setNavigationBarColor(color);
+        double lum = (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255.0;
+        int f = getWindow().getDecorView().getSystemUiVisibility();
+        if (lum > 0.5) {
+            f |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        } else {
+            f &= ~(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+        }
+        getWindow().getDecorView().setSystemUiVisibility(f);
+        if (web != null) {
+            web.setBackgroundColor(color);
+        }
+    }
+
     private static final String PULL_JS = "(function(){if(window.__qpull||!window.QApp)return;window.__qpull=1;"
             + "document.addEventListener('touchstart',function(e){var n=e.target,ok=true;"
             + "while(n&&n.nodeType===1){if(n.scrollTop>0){ok=false;break}"
@@ -80,6 +112,24 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void bar(String css) {
+            try {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)").matcher(css == null ? "" : css);
+                if (!m.find()) {
+                    return;
+                }
+                final int col = Color.rgb(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)));
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        applyBar(col);
+                    }
+                });
+            } catch (Exception ignored) {
+            }
+        }
+
+        @JavascriptInterface
         public void pull(boolean ok) {
             canPull = ok;
         }
@@ -104,8 +154,8 @@ public class MainActivity extends Activity {
     @SuppressWarnings("SetJavaScriptEnabled")
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-        getWindow().setStatusBarColor(Color.WHITE);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        applyBar(night ? 0xFF171A26 : 0xFFFFFFFF);
         web = new WebView(this);
         web.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         FrameLayout root = new FrameLayout(this);
@@ -171,6 +221,9 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
+        if (android.os.Build.VERSION.SDK_INT >= 29 && android.os.Build.VERSION.SDK_INT < 33) {
+            s.setForceDark(night ? WebSettings.FORCE_DARK_AUTO : WebSettings.FORCE_DARK_OFF);
+        }
         s.setUserAgentString(s.getUserAgentString() + " QategoriApp/2");
         web.addJavascriptInterface(new Bridge(), "QApp");
         web.setWebViewClient(new WebViewClient() {
@@ -203,6 +256,7 @@ public class MainActivity extends Activity {
                 if (url != null && url.startsWith("https://") && inApp(Uri.parse(url))) {
                     v.evaluateJavascript(SYNC_JS, null);
                     v.evaluateJavascript(PULL_JS, null);
+                    v.evaluateJavascript(BAR_JS, null);
                 }
             }
 
