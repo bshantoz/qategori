@@ -14,6 +14,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ambil materi nihongo
+        uses: actions/checkout@v4
+        with:
+          repository: bshantoz/nihongo
+          path: nihongo_src
+
+      - name: Bundel materi dan halaman situs ke dalam aplikasi
+        run: |
+          A=app/src/main/assets/web
+          mkdir -p $A/nihongo $A/site
+          (cd nihongo_src && find . -type f \( -iname '*.js' -o -iname '*.json' -o -iname '*.html' -o -iname '*.css' -o -iname '*.svg' -o -iname '*.txt' -o -iname '*.csv' \) -not -path './.git/*' | while read -r f; do mkdir -p "../$A/nihongo/$(dirname "$f")"; cp "$f" "../$A/nihongo/$f"; done)
+          curl -fsSL https://qategori.com/ -o $A/site/index.html || true
+          curl -fsSL https://qategori.com/sitemap-pages.xml -o /tmp/sm.xml || true
+          for p in p/bali.html p/bisnis-karir.html p/bookmark.html p/building-cleaning.html p/contact.html p/disclaimer.html p/jawa.html p/jidosha-seibi.html p/kebijakan-pengembalian-dana-refund.html p/kontruksi.html p/level-materi-jlpt.html p/manufaktur.html p/materi-dan-kuis-kanji-metode-bushu.html p/materi-dan-soal-tg2-jlpt.html p/materi-jlpt-n1.html p/materi-jlpt-n2.html p/materi-jlpt-n3.html p/materi-jlpt-n4.html p/materi-jlpt-n5.html p/pelayanan-dan-pabrik-makanan.html p/perhotelan.html p/perikanan.html p/permainan.html p/pertanian.html p/pertanyaan-yang-sering-ditanyakan-faq.html p/privacy-policy.html p/sunda.html p/syarat-ketentuan.html p/tentang.html; do
+            mkdir -p "$A/site/$(dirname "$p")"
+            curl -fsSL "https://qategori.com/$p" -o "$A/site/$p" || true
+          done
+          for u in $(grep -o '<loc>[^<]*</loc>' /tmp/sm.xml 2>/dev/null | sed 's/<[^>]*>//g'); do
+            p=$(echo "$u" | sed -E 's#https?://[^/]+/##; s/[?].*//')
+            [ -n "$p" ] || continue
+            mkdir -p "$A/site/$(dirname "$p")"
+            curl -fsSL "$u" -o "$A/site/$p" || true
+          done
+          du -sh $A; find $A -type f | wc -l
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
