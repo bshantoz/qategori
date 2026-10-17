@@ -184,4 +184,82 @@ final class Data {
         sp(c).edit().putStringSet("done_" + lv, m).putStringSet("base_" + lv, new HashSet<String>(m)).apply();
         return m;
     }
+
+    // ---- Mode arsip dan tombol kembali ----
+
+    static boolean archMode(Context c) {
+        return sp(c).getBoolean("arch", false);
+    }
+
+    static void toggleArch(Context c) {
+        sp(c).edit().putBoolean("arch", !archMode(c)).putInt("apos", 0).putBoolean("rev", false).apply();
+    }
+
+    /** Indeks kata yang sudah hapal (urutan data) pada level aktif. */
+    static List<Integer> archList(Context c, String lv) {
+        JSONArray w = words(c, lv);
+        Set<String> d = done(c, lv);
+        List<Integer> r = new ArrayList<Integer>();
+        for (int i = 0; i < w.length(); i++) {
+            JSONArray x = w.optJSONArray(i);
+            if (x != null && d.contains(key(x))) {
+                r.add(i);
+            }
+        }
+        return r;
+    }
+
+    static int apos(Context c, int size) {
+        if (size <= 0) {
+            return 0;
+        }
+        int p = sp(c).getInt("apos", 0) % size;
+        return p < 0 ? p + size : p;
+    }
+
+    static void archMove(Context c, int delta) {
+        List<Integer> l = archList(c, level(c));
+        if (l.isEmpty()) {
+            return;
+        }
+        int p = apos(c, l.size()) + delta;
+        sp(c).edit().putInt("apos", ((p % l.size()) + l.size()) % l.size()).putBoolean("rev", false).apply();
+    }
+
+    /** Keluarkan kata yang sedang tampil di arsip dari daftar hapal. */
+    static void unarchive(Context c) {
+        String lv = level(c);
+        List<Integer> l = archList(c, lv);
+        if (l.isEmpty()) {
+            return;
+        }
+        JSONArray x = words(c, lv).optJSONArray(l.get(apos(c, l.size())));
+        if (x == null) {
+            return;
+        }
+        Set<String> d = done(c, lv);
+        d.remove(key(x));
+        sp(c).edit().putStringSet("done_" + lv, d).putBoolean("rev", false).apply();
+    }
+
+    /** Kembali ke kartu sebelumnya yang belum hapal. */
+    static void prev(Context c) {
+        String lv = level(c);
+        JSONArray w = words(c, lv);
+        int n = w.length();
+        int p = findPos(c, lv);
+        if (n == 0 || p < 0) {
+            return;
+        }
+        Set<String> d = done(c, lv);
+        List<Integer> o = order(c, lv, n);
+        for (int i = 1; i < n; i++) {
+            int q = ((p - i) % n + n) % n;
+            JSONArray x = w.optJSONArray(o.get(q));
+            if (x != null && !d.contains(key(x))) {
+                sp(c).edit().putInt("pos_" + lv, q).putBoolean("rev", false).apply();
+                return;
+            }
+        }
+    }
 }

@@ -13,7 +13,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:singleLine="true"
-        android:textColor="#6B7186"
+        android:textColor="@color/w_sub"
         android:textSize="10sp" />
 
     <TextView
@@ -21,7 +21,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:singleLine="true"
-        android:textColor="#1B2440"
+        android:textColor="@color/w_text"
         android:textSize="46sp"
         android:textStyle="bold" />
 
@@ -31,7 +31,7 @@
         android:layout_height="wrap_content"
         android:maxLines="2"
         android:gravity="center"
-        android:textColor="#1B2440"
+        android:textColor="@color/w_text"
         android:textSize="13sp" />
 
     <TextView
@@ -39,6 +39,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:singleLine="true"
-        android:textColor="#3B3BF0"
+        android:textColor="@color/w_accent"
         android:textSize="11sp" />
 </LinearLayout>

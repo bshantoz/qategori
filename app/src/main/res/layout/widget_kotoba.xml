@@ -7,13 +7,31 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <TextView
-        android:id="@+id/head"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:singleLine="true"
-        android:textColor="#6B7186"
-        android:textSize="11sp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/head"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:textColor="@color/w_sub"
+            android:textSize="11sp" />
+
+        <ImageView
+            android:id="@+id/btnArch"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginTop="-4dp"
+            android:layout_marginEnd="-4dp"
+            android:contentDescription="Arsip"
+            android:padding="4dp"
+            android:src="@drawable/ic_archive" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/card"
@@ -28,7 +46,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:textColor="#1B2440"
+            android:textColor="@color/w_text"
             android:textSize="34sp"
             android:textStyle="bold" />
 
@@ -37,7 +55,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:textColor="#3B3BF0"
+            android:textColor="@color/w_accent"
             android:textSize="14sp" />
 
         <TextView
@@ -45,37 +63,54 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:maxLines="2"
-            android:textColor="#1B2440"
+            android:textColor="@color/w_text"
             android:textSize="15sp" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:weightSum="10">
+
+        <TextView
+            android:id="@+id/btnPrev"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="4"
+            android:background="@drawable/bg_btn"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="‹ Kembali"
+            android:textColor="@color/w_btn_text"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnMid"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="2"
+            android:background="@drawable/bg_btn_pr"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="✓"
+            android:textColor="@color/w_pr_text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/btnNext"
             android:layout_width="0dp"
             android:layout_height="34dp"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
+            android:layout_weight="4"
             android:background="@drawable/bg_btn"
             android:gravity="center"
-            android:text="Lanjut"
-            android:textColor="#1B2440"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/btnDone"
-            android:layout_width="0dp"
-            android:layout_height="34dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_btn_pr"
-            android:gravity="center"
-            android:text="Hapal"
-            android:textColor="#FFFFFF"
+            android:singleLine="true"
+            android:text="Lanjut ›"
+            android:textColor="@color/w_btn_text"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>

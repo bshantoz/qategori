@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_bg">#FFFFFF</color>
+    <color name="w_bg">#FDFBF7</color>
+    <color name="w_stroke">#E1E4EC</color>
+    <color name="w_text">#1B2440</color>
+    <color name="w_sub">#6B7186</color>
+    <color name="w_accent">#3B3BF0</color>
+    <color name="w_btn">#F1F2F8</color>
+    <color name="w_btn_text">#1B2440</color>
+    <color name="w_pr">#3B3BF0</color>
+    <color name="w_pr_text">#FFFFFF</color>
 </resources>
