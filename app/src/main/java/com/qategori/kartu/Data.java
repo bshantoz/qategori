@@ -18,7 +18,7 @@ import java.util.Set;
 
 /** Data kotoba dan kanji (dari assets) serta progres hapalan (SharedPreferences). */
 final class Data {
-    static final String[] LV = {"n5", "n4", "n3", "n2", "n1"};
+    static final String[] LV = {"n5", "n4", "n3", "n2", "n1", "hira", "kata"};
     private static final String PREF = "kartu";
     private static JSONObject kotoba;
     private static JSONArray kanji;
@@ -67,6 +67,21 @@ final class Data {
 
     private static SharedPreferences sp(Context c) {
         return c.getApplicationContext().getSharedPreferences(PREF, Context.MODE_PRIVATE);
+    }
+
+    /** Nama tampilan level: N5..N1 untuk kotoba, Hiragana/Katakana untuk kana. */
+    static String label(String lv) {
+        if ("hira".equals(lv)) {
+            return "Hiragana";
+        }
+        if ("kata".equals(lv)) {
+            return "Katakana";
+        }
+        return lv.toUpperCase();
+    }
+
+    static boolean isKana(String lv) {
+        return "hira".equals(lv) || "kata".equals(lv);
     }
 
     static String level(Context c) {

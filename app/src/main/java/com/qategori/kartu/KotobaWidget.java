@@ -81,7 +81,7 @@ public class KotobaWidget extends AppWidgetProvider {
         String note = null;
         if (arch) {
             java.util.List<Integer> l = Data.archList(c, lv);
-            rv.setTextViewText(R.id.head, "Arsip " + lv.toUpperCase() + " · " + (l.isEmpty() ? 0 : Data.apos(c, l.size()) + 1) + "/" + l.size());
+            rv.setTextViewText(R.id.head, "Arsip " + Data.label(lv) + " · " + (l.isEmpty() ? 0 : Data.apos(c, l.size()) + 1) + "/" + l.size());
             rv.setImageViewResource(R.id.btnArch, R.drawable.ic_archive_on);
             rv.setTextViewText(R.id.btnMid, "\u21A9");
             if (l.isEmpty()) {
@@ -90,7 +90,7 @@ public class KotobaWidget extends AppWidgetProvider {
                 w = words.optJSONArray(l.get(Data.apos(c, l.size())));
             }
         } else {
-            rv.setTextViewText(R.id.head, "Kotoba " + lv.toUpperCase() + " \u00B7 " + doneN + "/" + words.length() + " hapal");
+            rv.setTextViewText(R.id.head, (Data.isKana(lv) ? "Kana " : "Kotoba ") + Data.label(lv) + " \u00B7 " + doneN + "/" + words.length() + " hapal");
             rv.setImageViewResource(R.id.btnArch, R.drawable.ic_archive);
             rv.setTextViewText(R.id.btnMid, "\u2713");
             int idx = Data.current(c, lv);
@@ -98,7 +98,7 @@ public class KotobaWidget extends AppWidgetProvider {
                 w = words.optJSONArray(idx);
             }
             if (w == null) {
-                note = words.length() == 0 ? "Data kosong" : "Level " + lv.toUpperCase() + " selesai";
+                note = words.length() == 0 ? "Data kosong" : "Level " + Data.label(lv) + " selesai";
             }
         }
         if (w == null) {
@@ -113,7 +113,7 @@ public class KotobaWidget extends AppWidgetProvider {
                 rv.setTextViewText(R.id.arti, arti);
             } else {
                 rv.setTextViewText(R.id.sub, "");
-                rv.setTextViewText(R.id.arti, "Ketuk kartu untuk melihat arti");
+                rv.setTextViewText(R.id.arti, kj.isEmpty() ? "Ketuk kartu untuk melihat bunyinya" : "Ketuk kartu untuk melihat arti");
             }
         }
         PendingIntent flip = pi(c, A_FLIP, 1);

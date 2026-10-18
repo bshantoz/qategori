@@ -112,13 +112,13 @@ public class PengaturanActivity extends Activity {
         root.addView(text("Cara memasang widget", 16, true, 0xFF1B2440));
         root.addView(text("1. Tahan bagian kosong layar utama, lalu pilih Widget.\n2. Cari \"Qategori Kartu\".\n3. Seret \"Kartu kotoba\" atau \"Kanji hari ini\" ke layar utama.", 14, false, 0xFF1B2440));
 
-        root.addView(text("Level kartu kotoba", 16, true, 0xFF1B2440));
+        root.addView(text("Isi kartu: kotoba (N5-N1) atau kana", 16, true, 0xFF1B2440));
         RadioGroup g = new RadioGroup(this);
         String cur = Data.level(this);
         for (final String lv : Data.LV) {
             RadioButton rb = new RadioButton(this);
             rb.setId(View.generateViewId());
-            rb.setText(lv.toUpperCase() + " · " + Data.done(this, lv).size() + "/" + Data.words(this, lv).length() + " hapal");
+            rb.setText(Data.label(lv) + " · " + Data.done(this, lv).size() + "/" + Data.words(this, lv).length() + " hapal");
             rb.setTextSize(15);
             rb.setChecked(lv.equals(cur));
             rb.setOnClickListener(new View.OnClickListener() {

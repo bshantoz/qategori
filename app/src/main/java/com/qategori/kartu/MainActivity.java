@@ -75,11 +75,11 @@ public class MainActivity extends Activity {
 
     private static final String TTS_JS = "(function(){if(window.__qtts||!window.QApp||!QApp.tts)return;window.__qtts=1;var q={},n=0,cache=null;"
             + "function U(t){this.text=t===undefined?'':String(t);this.lang='';this.voice=null;this.rate=1;this.pitch=1;this.volume=1;this.onend=null;this.onerror=null;this.onstart=null}"
-            + "function vs(){if(cache&&cache.length)return cache;try{cache=JSON.parse(QApp.voices()).map(function(v){return{name:v.n,lang:v.l,voiceURI:v.n,localService:true,default:false}})}catch(e){cache=[]}return cache}"
+            + "function vs(){if(cache&&cache.length)return cache;try{cache=JSON.parse(QApp.voices()).map(function(v){return{name:v.n,lang:v.l,voiceURI:v.u||v.n,localService:true,default:false}})}catch(e){cache=[]}return cache}"
             + "function done(id,ok){var u=q[id];if(!u)return;delete q[id];S.speaking=Object.keys(q).length>0;var f=ok?u.onend:u.onerror;"
             + "try{if(typeof f==='function')f.call(u,{type:ok?'end':'error',utterance:u})}catch(e){}}"
             + "var S={speaking:false,pending:false,paused:false,onvoiceschanged:null,getVoices:vs,"
-            + "speak:function(u){var id=++n;q[id]=u;S.speaking=true;try{QApp.tts(id,u.text,u.lang||'ja-JP',u.rate||1,u.pitch||1,(u.voice&&u.voice.name)||'')}catch(e){done(id,0)}},"
+            + "speak:function(u){var id=++n;q[id]=u;S.speaking=true;try{QApp.tts(id,u.text,u.lang||'ja-JP',u.rate||1,u.pitch||1,(u.voice&&(u.voice.voiceURI||u.voice.name))||'')}catch(e){done(id,0)}},"
             + "cancel:function(){q={};S.speaking=false;try{QApp.ttsStop()}catch(e){}},pause:function(){},resume:function(){},"
             + "addEventListener:function(){},removeEventListener:function(){}};"
             + "window.__qttsDone=done;"
@@ -87,7 +87,7 @@ public class MainActivity extends Activity {
             + "try{window.SpeechSynthesisUtterance=U}catch(e){}"
             + "setTimeout(function(){if(vs().length&&typeof S.onvoiceschanged==='function')S.onvoiceschanged({})},500)})();";
 
-    private static final String SYNC_JS = "(function(){try{if(!window.QApp)return;var L=['n5','n4','n3','n2','n1'],o={};"
+    private static final String SYNC_JS = "(function(){try{if(!window.QApp)return;var L=['n5','n4','n3','n2','n1','hira','kata'],o={};"
             + "L.forEach(function(l){var a=[];try{a=JSON.parse(localStorage.getItem(l+'_kotoba_archived_v1')||'[]')}catch(e){}"
             + "o[l]=Array.isArray(a)?a:[]});"
             + "var m=JSON.parse(QApp.sync(JSON.stringify(o)));"
@@ -149,9 +149,18 @@ public class MainActivity extends Activity {
             try {
                 if (tts != null && ttsOk && tts.getVoices() != null) {
                     for (android.speech.tts.Voice v : tts.getVoices()) {
-                        if ("ja".equals(v.getLocale().getLanguage())) {
+                        if ("ja".equals(v.getLocale().getLanguage()) && !v.getFeatures().contains("notInstalled")) {
                             JSONObject o = new JSONObject();
-                            o.put("n", v.getName());
+                            String nm = v.getName();
+                            String lc = nm.toLowerCase();
+                            String show = nm;
+                            if (lc.contains("-jac-") || lc.contains("-jad-")) {
+                                show = "日本語 男性 " + nm;
+                            } else if (lc.contains("-jab-") || lc.contains("-htm-")) {
+                                show = "日本語 女性 " + nm;
+                            }
+                            o.put("n", show);
+                            o.put("u", nm);
                             o.put("l", v.getLocale().toLanguageTag());
                             a.put(o);
                         }
