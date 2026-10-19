@@ -52,6 +52,11 @@ public class MainActivity extends Activity {
             return;
         }
         barColor = color;
+        try {
+            getSharedPreferences("ui", MODE_PRIVATE).edit().putInt("bar", color).apply();
+        } catch (Exception ignored) {
+        }
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(color));
         getWindow().setStatusBarColor(color);
         getWindow().setNavigationBarColor(color);
         double lum = (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255.0;
@@ -310,7 +315,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-        applyBar(night ? 0xFF171A26 : 0xFFFFFFFF);
+        applyBar(getSharedPreferences("ui", MODE_PRIVATE).getInt("bar", night ? 0xFF171A26 : 0xFFFFFFFF));
         web = new WebView(this);
         web.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         FrameLayout root = new FrameLayout(this);
@@ -360,6 +365,7 @@ public class MainActivity extends Activity {
                     case MotionEvent.ACTION_CANCEL:
                         if (pulling && canPull && web.getScrollY() == 0 && e.getRawY() - downY > thr
                                 && e.getActionMasked() == MotionEvent.ACTION_UP) {
+                            Offline.forceFresh = true;
                             web.reload();
                         }
                         pulling = false;
@@ -404,7 +410,7 @@ public class MainActivity extends Activity {
                 if (Offline.offlineOnly(r.getUrl(), r.isForMainFrame()) && Offline.online(MainActivity.this)) {
                     return null;
                 }
-                return Offline.fetch(MainActivity.this, r.getUrl().toString(), r.getRequestHeaders());
+                return Offline.fetch(MainActivity.this, r.getUrl().toString(), r.getRequestHeaders(), r.isForMainFrame());
             }
 
             @Override

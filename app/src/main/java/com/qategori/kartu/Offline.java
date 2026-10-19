@@ -16,6 +16,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 /** Cache offline: ambil dari internet dulu, simpan ke HP, dan pakai salinan HP kalau internet mati. */
@@ -252,8 +253,70 @@ final class Offline {
         }
     }
 
+    /** Dipakai tombol "tarik untuk muat ulang": satu permintaan halaman utama berikutnya wajib ambil dari internet. */
+    static volatile boolean forceFresh = false;
+    private static final java.util.concurrent.ExecutorService BG = java.util.concurrent.Executors.newFixedThreadPool(2);
+    private static final java.util.Set<String> BUSY = java.util.Collections.synchronizedSet(new HashSet<String>());
+
+    private static void refreshAsync(final Context c, final String url, final Map<String, String> rh) {
+        if (!BUSY.add(url)) {
+            return;
+        }
+        final Context app = c.getApplicationContext();
+        final Map<String, String> h = rh == null ? null : new HashMap<String, String>(rh);
+        BG.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    fetchNet(app, url, h);
+                } catch (Exception ignored) {
+                } finally {
+                    BUSY.remove(url);
+                }
+            }
+        });
+    }
+
+    /**
+     * Cepat dulu: kalau salinan di HP ada, langsung dipakai (tanpa menunggu internet) lalu diperbarui diam-diam
+     * di latar untuk pembukaan berikutnya. Halaman utama hanya dipakai dari salinan kalau umurnya kurang dari 2 jam
+     * dan bukan sedang tarik-untuk-muat-ulang. Kalau belum ada salinan, ambil dari internet seperti biasa.
+     */
+    static WebResourceResponse fetch(Context c, String url, Map<String, String> reqHeaders, boolean mainFrame) {
+        if (!online(c)) {
+            return cached(c, url, 0, reqHeaders);
+        }
+        try {
+            String k = hash(url);
+            File b = new File(dir(c), k + ".b");
+            File m = new File(dir(c), k + ".m");
+            if (b.exists() && m.exists()) {
+                long age = System.currentTimeMillis() - b.lastModified();
+                boolean skip = mainFrame && (forceFresh || age > 2L * 3600 * 1000);
+                if (mainFrame && forceFresh) {
+                    forceFresh = false;
+                }
+                if (!skip) {
+                    WebResourceResponse w = cached(c, url, 0, reqHeaders);
+                    if (w != null) {
+                        if (age > 3L * 60 * 1000) {
+                            refreshAsync(c, url, reqHeaders);
+                        }
+                        return w;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return fetchNet(c, url, reqHeaders);
+    }
+
     /** Internet dulu (lalu simpan); kalau gagal pakai salinan. Return null = biarkan WebView mengurus sendiri. */
     static WebResourceResponse fetch(Context c, String url, Map<String, String> reqHeaders) {
+        return fetchNet(c, url, reqHeaders);
+    }
+
+    private static WebResourceResponse fetchNet(Context c, String url, Map<String, String> reqHeaders) {
         if (!online(c)) {
             return cached(c, url, 0, reqHeaders);
         }
