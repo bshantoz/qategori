@@ -290,7 +290,10 @@ final class Offline {
             String k = hash(url);
             File b = new File(dir(c), k + ".b");
             File m = new File(dir(c), k + ".m");
-            if (b.exists() && m.exists()) {
+            /* Halaman utama hanya boleh dari salinan kalau salinan itu disimpan dari alamat PERSIS ini (tanpa pindah ke www),
+               kalau tidak asal halaman jadi salah dan fetch materi/berita gagal (beda origin). */
+            boolean okMain = !mainFrame || new File(dir(c), "ok" + Integer.toHexString(url.hashCode())).exists();
+            if (okMain && b.exists() && m.exists()) {
                 long age = System.currentTimeMillis() - b.lastModified();
                 boolean skip = mainFrame && (forceFresh || age > 2L * 3600 * 1000);
                 if (mainFrame && forceFresh) {
@@ -364,6 +367,7 @@ final class Offline {
             byte[] body = readAll(con.getInputStream());
             new File(dir(c), k + ".r").delete();
             write(new File(dir(c), k + ".b"), body);
+            write(new File(dir(c), "ok" + Integer.toHexString(url.hashCode())), new byte[]{49});
             write(new File(dir(c), k + ".m"), (mime + "\n" + (enc == null ? "" : enc)).getBytes("UTF-8"));
             return build(mime, enc, body, reqHeaders);
         } catch (Exception e) {
