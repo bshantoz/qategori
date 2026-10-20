@@ -25,7 +25,7 @@ import java.net.URL;
 /** Cek artikel baru tiap sekitar 30 menit dan tampilkan notifikasi. */
 public class NewsJob extends JobService {
     static final int ID = 4401;
-    private static final String FEED = "https://qategori.com/feeds/posts/default?alt=json&max-results=3";
+    private static final String FEED = "https://www.qategori.com/feeds/posts/default?alt=json&max-results=3";
 
     static void schedule(Context c) {
         JobScheduler js = (JobScheduler) c.getSystemService(Context.JOB_SCHEDULER_SERVICE);

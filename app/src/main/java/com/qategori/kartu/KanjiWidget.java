@@ -56,7 +56,7 @@ public class KanjiWidget extends AppWidgetProvider {
         rv.setTextViewText(R.id.arti, r.optString(4));
         rv.setTextViewText(R.id.yomi, yomi);
 
-        String url = "https://qategori.com/p/materi-dan-kuis-kanji-metode-bushu.html";
+        String url = "https://www.qategori.com/p/materi-dan-kuis-kanji-metode-bushu.html";
         try {
             url = url + "?q=" + URLEncoder.encode(kj, "UTF-8") + "&tab=asal";
         } catch (Exception e) {

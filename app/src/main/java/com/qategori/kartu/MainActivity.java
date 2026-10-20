@@ -28,7 +28,7 @@ import java.util.Set;
 
 /** Membuka qategori.com di dalam aplikasi, dengan cache offline dan sinkron hapalan dengan widget. */
 public class MainActivity extends Activity {
-    static final String HOME = "https://qategori.com/";
+    static final String HOME = "https://www.qategori.com/";
     private WebView web;
     private TextView ind;
     private volatile boolean canPull = true;

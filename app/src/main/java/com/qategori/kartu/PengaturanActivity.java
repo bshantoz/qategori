@@ -271,7 +271,7 @@ public class PengaturanActivity extends Activity {
                 } catch (Exception ignored) {
                 }
                 // 2) halaman statis situs (Blogger)
-                String sm = httpText("https://qategori.com/sitemap-pages.xml");
+                String sm = httpText("https://www.qategori.com/sitemap-pages.xml");
                 Matcher m = Pattern.compile("<loc>([^<]+)</loc>").matcher(sm);
                 while (m.find()) {
                     String u = m.group(1).trim();
@@ -285,7 +285,7 @@ public class PengaturanActivity extends Activity {
                 java.util.Map<String, String> hd2 = new java.util.HashMap<String, String>();
                 hd2.put("User-Agent", android.webkit.WebSettings.getDefaultUserAgent(PengaturanActivity.this));
                 for (int i = 0; i < PAGES.length; i++) {
-                    String u = "https://qategori.com" + PAGES[i];
+                    String u = "https://www.qategori.com" + PAGES[i];
                     set("Mengunduh halaman " + (i + 1) + "/" + PAGES.length + "...");
                     Offline.get(PengaturanActivity.this, u, hd2);
                 }
