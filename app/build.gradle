@@ -10,8 +10,8 @@ android {
         applicationId 'com.qategori.kartu'
         minSdk 26
         targetSdk 34
-        versionCode 12
-        versionName '2.10.0'
+        versionCode 13
+        versionName '2.11.0'
     }
 
     signingConfigs {
@@ -21,11 +21,26 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Keystore release TIDAK disimpan di repo. Di GitHub Actions file-nya
+            // dibuat dari Secret KEYSTORE_BASE64 (lihat .github/workflows/build.yml),
+            // kata sandi & alias dibaca dari environment (Secrets).
+            // KEYSTORE_PATH relatif terhadap folder app/.
+            storeFile file(System.getenv('KEYSTORE_PATH') ?: 'qategori-release.keystore')
+            storeType 'PKCS12'
+            storePassword System.getenv('KEYSTORE_PASSWORD')
+            keyAlias System.getenv('KEY_ALIAS')
+            keyPassword System.getenv('KEY_PASSWORD')
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 
