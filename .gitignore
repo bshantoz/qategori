@@ -1,0 +1,13 @@
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystore release JANGAN pernah ter-commit (yang debug lama sudah terlanjur masuk repo).
+*.keystore
+!app/debug.keystore
