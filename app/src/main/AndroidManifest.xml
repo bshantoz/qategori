@@ -37,6 +37,13 @@
                 <data android:scheme="https" android:host="www.qategori.com" />
                 <data android:scheme="https" android:host="qategori.com" />
             </intent-filter>
+            <!-- Tujuan Bagikan: video dari YouTube/TikTok/Facebook/dll bisa dikirim ke Qategori
+                 dan langsung dibuka di halaman Terjemah Video (lihat handleShareIntent di MainActivity). -->
+            <intent-filter android:label="Terjemah Video">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
