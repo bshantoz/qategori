@@ -13,6 +13,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -31,7 +33,9 @@ import java.util.regex.Matcher;
 /** Membuka qategori.com di dalam aplikasi, dengan cache offline dan sinkron hapalan dengan widget. */
 public class MainActivity extends Activity {
     static final String HOME = "https://www.qategori.com/";
+    private static final int REQ_FILE = 4101;
     private WebView web;
+    private ValueCallback<Uri[]> fileCb;
     private TextView ind;
     private volatile boolean canPull = true;
     private float downY;
@@ -442,6 +446,33 @@ public class MainActivity extends Activity {
                 }
             }
         });
+        web.setWebChromeClient(new WebChromeClient() {
+            /** Tanpa ini, ketukan pada tombol unggah file di situs (mis. unggah .srt/.vtt
+                di Terjemah Video) tidak bereaksi apa-apa di dalam WebView. */
+            @Override
+            public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                if (fileCb != null) {
+                    fileCb.onReceiveValue(null);
+                    fileCb = null;
+                }
+                fileCb = cb;
+                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("*/*");
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                if (params != null && params.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                    i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                }
+                try {
+                    startActivityForResult(i, REQ_FILE);
+                } catch (Exception e) {
+                    fileCb = null;
+                    cb.onReceiveValue(null);
+                    return false;
+                }
+                return true;
+            }
+        });
         NewsJob.schedule(this);
         if (android.os.Build.VERSION.SDK_INT >= 33
                 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -489,6 +520,19 @@ public class MainActivity extends Activity {
     private static String extractFirstUrl(String text) {
         Matcher m = Patterns.WEB_URL.matcher(text);
         return m.find() ? m.group() : null;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_FILE && fileCb != null) {
+            Uri[] results = null;
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                results = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+            }
+            fileCb.onReceiveValue(results);
+            fileCb = null;
+        }
     }
 
     @Override
