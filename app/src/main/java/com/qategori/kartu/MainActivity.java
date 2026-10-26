@@ -6,6 +6,7 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -25,6 +26,7 @@ import org.json.JSONObject;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 /** Membuka qategori.com di dalam aplikasi, dengan cache offline dan sinkron hapalan dengan widget. */
 public class MainActivity extends Activity {
@@ -447,6 +449,7 @@ public class MainActivity extends Activity {
         }
         Uri d = getIntent() == null ? null : getIntent().getData();
         web.loadUrl(d != null && inApp(d) ? d.toString() : HOME);
+        handleShareIntent(getIntent());
     }
 
     @Override
@@ -456,6 +459,36 @@ public class MainActivity extends Activity {
         if (d != null && inApp(d) && web != null) {
             web.loadUrl(d.toString());
         }
+        handleShareIntent(i);
+    }
+
+    /** Video yang dibagikan dari YouTube/TikTok/Facebook/dll (ACTION_SEND teks)
+        dibuka langsung di halaman Terjemah Video situs, tautannya sudah terisi. */
+    private void handleShareIntent(Intent intent) {
+        if (intent == null || web == null) {
+            return;
+        }
+        if (!Intent.ACTION_SEND.equals(intent.getAction())) {
+            return;
+        }
+        if (!"text/plain".equals(intent.getType())) {
+            return;
+        }
+        String shared = intent.getStringExtra(Intent.EXTRA_TEXT);
+        if (shared == null || shared.length() == 0) {
+            return;
+        }
+        String url = extractFirstUrl(shared);
+        if (url == null) {
+            return;
+        }
+        web.loadUrl("https://www.qategori.com/#terjemah?url=" + Uri.encode(url));
+    }
+
+    /** Ambil URL pertama dari teks bagikan (TikTok/Facebook membagikan teks + URL). */
+    private static String extractFirstUrl(String text) {
+        Matcher m = Patterns.WEB_URL.matcher(text);
+        return m.find() ? m.group() : null;
     }
 
     @Override
