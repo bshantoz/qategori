@@ -26,6 +26,21 @@ import android.widget.TextView;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialCancellationException;
+import androidx.credentials.exceptions.GetCredentialException;
+
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -33,6 +48,9 @@ import java.util.regex.Matcher;
 /** Membuka qategori.com di dalam aplikasi, dengan cache offline dan sinkron hapalan dengan widget. */
 public class MainActivity extends Activity {
     static final String HOME = "https://www.qategori.com/";
+    // Web Client ID dari Firebase Console (Authentication > Google > Web client ID).
+    // WAJIB diganti dengan nilai aslinya supaya login Google bawaan aplikasi bekerja.
+    private static final String WEB_CLIENT_ID = "323434645943-vsultpotik8qo9e6qf3mrrs38s40p8o4.apps.googleusercontent.com";
     private static final int REQ_FILE = 4101;
     private WebView web;
     private ValueCallback<Uri[]> fileCb;
@@ -104,6 +122,109 @@ public class MainActivity extends Activity {
             + "var m=JSON.parse(QApp.sync(JSON.stringify(o)));"
             + "L.forEach(function(l){var k=l+'_kotoba_archived_v1',nv=JSON.stringify(m[l]);"
             + "if(localStorage.getItem(k)!==nv){localStorage.setItem(k,nv)}})}catch(e){}})();";
+
+    // ===== Login Google bawaan aplikasi (Credential Manager) =====
+    // Alur: halaman web memanggil QApp.googleLogin() -> pemilih akun sistem Google tampil
+    // (bukan WebView, jadi diizinkan Google) -> token ID dikirim balik ke halaman lewat
+    // window.__qGoogleCb(token, error) -> halaman menyelesaikan login Firebase-nya sendiri.
+    private final ExecutorService cmExec = Executors.newSingleThreadExecutor();
+    private boolean googleBusy = false;
+
+    private void googleCb(final String token, final String err) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                googleBusy = false;
+                String t = token == null ? "null" : JSONObject.quote(token);
+                String e = err == null ? "null" : JSONObject.quote(err);
+                if (web != null) {
+                    web.evaluateJavascript("window.__qGoogleCb&&window.__qGoogleCb(" + t + "," + e + ")", null);
+                }
+            }
+        });
+    }
+
+    private void doGoogleLogin() {
+        if (googleBusy) {
+            return;
+        }
+        googleBusy = true;
+        try {
+            GetGoogleIdOption opt = new GetGoogleIdOption.Builder()
+                    .setServerClientId(WEB_CLIENT_ID)
+                    .setFilterByAuthorizedAccounts(false)
+                    .build();
+            GetCredentialRequest req = new GetCredentialRequest.Builder()
+                    .addCredentialOption(opt)
+                    .build();
+            CredentialManager cm = CredentialManager.create(this);
+            cm.getCredentialAsync(this, req, null, cmExec,
+                    new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
+                        @Override
+                        public void onResult(GetCredentialResponse resp) {
+                            try {
+                                Credential cred = resp.getCredential();
+                                if (cred instanceof CustomCredential
+                                        && GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(cred.getType())) {
+                                    GoogleIdTokenCredential g = GoogleIdTokenCredential.createFrom(((CustomCredential) cred).getData());
+                                    googleCb(g.getIdToken(), null);
+                                } else {
+                                    googleCb(null, "Jenis kredensial tidak dikenal.");
+                                }
+                            } catch (Exception ex) {
+                                googleCb(null, "Gagal membaca akun Google.");
+                            }
+                        }
+
+                        @Override
+                        public void onError(GetCredentialException e) {
+                            String m = (e instanceof GetCredentialCancellationException)
+                                    ? "Login Google dibatalkan."
+                                    : "Login Google gagal. Coba lagi sebentar.";
+                            googleCb(null, m);
+                        }
+                    });
+        } catch (Exception e) {
+            googleCb(null, "Login Google tidak tersedia di perangkat ini.");
+        }
+    }
+
+    // ===== Simpan berkas ke folder Unduhan (untuk Cadangkan dari halaman web) =====
+    private boolean writeDownload(String name, byte[] data) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                android.content.ContentValues cv = new android.content.ContentValues();
+                cv.put(android.provider.MediaStore.Downloads.DISPLAY_NAME, name);
+                cv.put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/json");
+                cv.put(android.provider.MediaStore.Downloads.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS);
+                cv.put(android.provider.MediaStore.Downloads.IS_PENDING, 1);
+                android.net.Uri uri = getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
+                if (uri == null) {
+                    return false;
+                }
+                java.io.OutputStream os = getContentResolver().openOutputStream(uri);
+                if (os == null) {
+                    return false;
+                }
+                os.write(data);
+                os.close();
+                cv.clear();
+                cv.put(android.provider.MediaStore.Downloads.IS_PENDING, 0);
+                getContentResolver().update(uri, cv, null, null);
+                return true;
+            }
+            java.io.File dir = getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS);
+            if (dir == null) {
+                dir = getFilesDir();
+            }
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(new java.io.File(dir, name));
+            fos.write(data);
+            fos.close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     public final class Bridge {
         @JavascriptInterface
@@ -218,6 +339,45 @@ public class MainActivity extends Activity {
                     startActivity(new Intent(MainActivity.this, PengaturanActivity.class));
                 }
             });
+        }
+
+        @JavascriptInterface
+        public void googleLogin() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    doGoogleLogin();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void saveFile(final String name, final String b64) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    boolean ok = false;
+                    try {
+                        ok = writeDownload(name, android.util.Base64.decode(b64, android.util.Base64.DEFAULT));
+                    } catch (Exception ignored) {
+                    }
+                    final boolean res = ok;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                android.widget.Toast.makeText(MainActivity.this,
+                                        res ? "Cadangan tersimpan di folder Unduhan." : "Gagal menyimpan cadangan.",
+                                        android.widget.Toast.LENGTH_LONG).show();
+                            } catch (Exception ignored) {
+                            }
+                            if (web != null) {
+                                web.evaluateJavascript("window.__qSaveCb&&window.__qSaveCb(" + (res ? "true" : "false") + ")", null);
+                            }
+                        }
+                    });
+                }
+            }).start();
         }
     }
 
@@ -474,6 +634,12 @@ public class MainActivity extends Activity {
             }
         });
         NewsJob.schedule(this);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                NewsJob.cekHarian(MainActivity.this);
+            }
+        }).start();
         if (android.os.Build.VERSION.SDK_INT >= 33
                 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1);

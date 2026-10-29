@@ -61,9 +61,13 @@ public class NewsJob extends JobService {
 
     private void cek() throws Exception {
         SharedPreferences sp = getSharedPreferences("kartu", Context.MODE_PRIVATE);
-        if (!sp.getBoolean("notif", true)) {
-            return;
+        if (sp.getBoolean("notif", true)) {
+            cekArtikel(sp);
         }
+        cekHarian(this);
+    }
+
+    private void cekArtikel(SharedPreferences sp) throws Exception {
         HttpURLConnection con = (HttpURLConnection) new URL(FEED).openConnection();
         con.setConnectTimeout(8000);
         con.setReadTimeout(12000);
@@ -112,6 +116,102 @@ public class NewsJob extends JobService {
             shown++;
         }
         sp.edit().putString("last_post", newest).apply();
+    }
+
+    // ===== Notifikasi harian: kanji & kotoba hari ini (sekali sehari, mulai pukul 06.00 JST) =====
+
+    static void cekHarian(Context c) {
+        try {
+            SharedPreferences sp = c.getSharedPreferences("kartu", Context.MODE_PRIVATE);
+            long jst = System.currentTimeMillis() + 9L * 3600L * 1000L;
+            long day = jst / 86400000L;
+            int hour = (int) ((jst / 3600000L) % 24L);
+            if (hour < 6) {
+                return;
+            }
+            if (sp.getBoolean("notif_kanji", true) && sp.getLong("daily_kanji", -1L) != day) {
+                sp.edit().putLong("daily_kanji", day).apply();
+                kanjiHariIni(c, day);
+            }
+            if (sp.getBoolean("notif_kotoba", true) && sp.getLong("daily_kotoba", -1L) != day) {
+                sp.edit().putLong("daily_kotoba", day).apply();
+                kotobaHariIni(c, day);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static void kanjiHariIni(Context c, long day) {
+        JSONArray all = Data.kanji(c);
+        java.util.List<Integer> pool = new java.util.ArrayList<Integer>();
+        for (int i = 0; i < all.length(); i++) {
+            JSONArray r = all.optJSONArray(i);
+            if (r != null && ("N5".equals(r.optString(0)) || "N4".equals(r.optString(0)))) {
+                pool.add(i);
+            }
+        }
+        if (pool.isEmpty()) {
+            return;
+        }
+        // Pilihan yang sama persis dengan widget Kanji hari ini.
+        JSONArray r = all.optJSONArray(pool.get((int) ((day * 7919L) % pool.size())));
+        if (r == null) {
+            return;
+        }
+        String on = firstOf(r.optString(2)), kun = firstOf(r.optString(3));
+        String yomi = on.isEmpty() ? kun : (kun.isEmpty() ? on : on + " / " + kun);
+        String teks = r.optString(1) + (yomi.isEmpty() ? "" : " (" + yomi + ")") + " — " + r.optString(4);
+        String url = "https://www.qategori.com/p/materi-dan-kuis-kanji-metode-bushu.html";
+        try {
+            url = url + "?q=" + java.net.URLEncoder.encode(r.optString(1), "UTF-8") + "&tab=asal";
+        } catch (Exception ignored) {
+        }
+        tampilHarian(c, 4402, "Kanji hari ini · " + r.optString(0), teks, teks, url);
+    }
+
+    private static void kotobaHariIni(Context c, long day) {
+        String lv = Data.level(c);
+        JSONArray words = Data.words(c, lv);
+        if (words.length() == 0) {
+            return;
+        }
+        JSONArray w = words.optJSONArray((int) ((day * 104729L) % words.length()));
+        if (w == null) {
+            return;
+        }
+        String depan = w.optString(0).isEmpty() ? w.optString(1) : w.optString(0) + "（" + w.optString(1) + "）";
+        String teks = depan + " (" + w.optString(2) + ") — " + w.optString(3);
+        String besar = teks;
+        if (w.optString(4).length() > 0) {
+            besar = teks + "\n" + w.optString(4) + (w.optString(6).length() > 0 ? "\n" + w.optString(6) : "");
+        }
+        tampilHarian(c, 4403, "Kotoba hari ini · " + Data.label(lv), teks, besar, MainActivity.HOME);
+    }
+
+    private static String firstOf(String s) {
+        int i = s.indexOf(',');
+        return (i < 0 ? s : s.substring(0, i)).trim();
+    }
+
+    private static void tampilHarian(Context c, int id, String judul, String teks, String besar, String link) {
+        NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) {
+            return;
+        }
+        nm.createNotificationChannel(new NotificationChannel("harian", "Kanji & kotoba hari ini", NotificationManager.IMPORTANCE_DEFAULT));
+        Intent it = new Intent(c, MainActivity.class);
+        it.setData(Uri.parse(link));
+        it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pi = PendingIntent.getActivity(c, id, it, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification n = new Notification.Builder(c, "harian")
+                .setSmallIcon(R.drawable.ic_notif)
+                .setContentTitle(judul)
+                .setContentText(teks)
+                .setStyle(new Notification.BigTextStyle().bigText(besar))
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .build();
+        nm.notify(id, n);
     }
 
     private static String HOME() {

@@ -40,7 +40,7 @@ final class Data {
         }
     }
 
-    /** Kotoba satu level: setiap item [kanji, kana, romaji, arti]. */
+    /** Kotoba satu level: setiap item [kanji, kana, romaji, arti, contohJp, contohRomaji, contohId]. */
     static synchronized JSONArray words(Context c, String lv) {
         try {
             if (kotoba == null) {
@@ -198,6 +198,16 @@ final class Data {
         m.removeAll(removed);
         sp(c).edit().putStringSet("done_" + lv, m).putStringSet("base_" + lv, new HashSet<String>(m)).apply();
         return m;
+    }
+
+    // ---- Mode widget kotoba: "belajar" (belum hapal) atau "hapal" (putar ulang yang sudah hapal) ----
+
+    static String widgetMode(Context c) {
+        return "hapal".equals(sp(c).getString("wmode", "belajar")) ? "hapal" : "belajar";
+    }
+
+    static void setWidgetMode(Context c, String m) {
+        sp(c).edit().putString("wmode", m).putBoolean("rev", false).apply();
     }
 
     // ---- Mode arsip dan tombol kembali ----

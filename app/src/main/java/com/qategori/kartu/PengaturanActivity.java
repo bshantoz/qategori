@@ -153,6 +153,30 @@ public class PengaturanActivity extends Activity {
         });
         root.addView(reset);
 
+        root.addView(text("Mode widget kotoba", 16, true, 0xFF1B2440));
+        RadioGroup gm = new RadioGroup(this);
+        String wm = Data.widgetMode(this);
+        String[][] modes = {
+                {"belajar", "Belajar — kartu yang belum hapal"},
+                {"hapal", "Hapalan — putar ulang kartu yang sudah hapal"}
+        };
+        for (final String[] md : modes) {
+            RadioButton rb = new RadioButton(this);
+            rb.setId(View.generateViewId());
+            rb.setText(md[1]);
+            rb.setTextSize(15);
+            rb.setChecked(md[0].equals(wm));
+            rb.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Data.setWidgetMode(PengaturanActivity.this, md[0]);
+                    KotobaWidget.refresh(PengaturanActivity.this);
+                }
+            });
+            gm.addView(rb);
+        }
+        root.addView(gm);
+
         root.addView(text("Notifikasi", 16, true, 0xFF1B2440));
         android.widget.CheckBox cb = new android.widget.CheckBox(this);
         cb.setText("Beri tahu kalau ada artikel baru");
@@ -165,6 +189,27 @@ public class PengaturanActivity extends Activity {
         });
         root.addView(cb);
         root.addView(text("Dicek sekitar tiap 30 menit selama HP tersambung internet.", 12, false, 0xFF6B7186));
+        android.widget.CheckBox cbK = new android.widget.CheckBox(this);
+        cbK.setText("Kanji hari ini — tiap pagi");
+        cbK.setChecked(getSharedPreferences("kartu", MODE_PRIVATE).getBoolean("notif_kanji", true));
+        cbK.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                getSharedPreferences("kartu", MODE_PRIVATE).edit().putBoolean("notif_kanji", on).apply();
+            }
+        });
+        root.addView(cbK);
+        android.widget.CheckBox cbW = new android.widget.CheckBox(this);
+        cbW.setText("Kotoba hari ini — tiap pagi");
+        cbW.setChecked(getSharedPreferences("kartu", MODE_PRIVATE).getBoolean("notif_kotoba", true));
+        cbW.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                getSharedPreferences("kartu", MODE_PRIVATE).edit().putBoolean("notif_kotoba", on).apply();
+            }
+        });
+        root.addView(cbW);
+        root.addView(text("Muncul sekali sehari mulai sekitar pukul 06.00 waktu Jepang. Kotoba mengikuti level kartu yang dipilih di atas.", 12, false, 0xFF6B7186));
 
         root.addView(text("Offline", 16, true, 0xFF1B2440));
         root.addView(text("Simpan bushu, JLPT, Jawa, Sunda, Bali dan halaman lain ke HP supaya bisa dibuka tanpa internet. Berita tetap butuh internet.", 13, false, 0xFF6B7186));

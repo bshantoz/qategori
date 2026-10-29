@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
 import android.widget.RemoteViews;
 
 import org.json.JSONArray;
@@ -25,31 +26,44 @@ public class KotobaWidget extends AppWidgetProvider {
         }
     }
 
+    /** Tampilan daftar hapal aktif bila mode widget "hapal" ATAU tombol arsip widget menyala. */
+    private static boolean archV(Context c) {
+        return Data.archMode(c) || "hapal".equals(Data.widgetMode(c));
+    }
+
     @Override
     public void onReceive(Context c, Intent i) {
         String a = i == null ? null : i.getAction();
         if (A_FLIP.equals(a)) {
             Data.flip(c);
         } else if (A_NEXT.equals(a)) {
-            if (Data.archMode(c)) {
+            if (archV(c)) {
                 Data.archMove(c, 1);
             } else {
                 Data.next(c);
             }
         } else if (A_PREV.equals(a)) {
-            if (Data.archMode(c)) {
+            if (archV(c)) {
                 Data.archMove(c, -1);
             } else {
                 Data.prev(c);
             }
         } else if (A_DONE.equals(a)) {
-            if (Data.archMode(c)) {
+            if (archV(c)) {
                 Data.unarchive(c);
             } else {
                 Data.markDone(c);
             }
         } else if (A_ARCH.equals(a)) {
-            Data.toggleArch(c);
+            if ("hapal".equals(Data.widgetMode(c))) {
+                // Sedang di mode Hapalan dari Pengaturan: tombol arsip = kembali ke mode Belajar.
+                Data.setWidgetMode(c, "belajar");
+                if (Data.archMode(c)) {
+                    Data.toggleArch(c);
+                }
+            } else {
+                Data.toggleArch(c);
+            }
         } else {
             super.onReceive(c, i);
             return;
@@ -75,13 +89,13 @@ public class KotobaWidget extends AppWidgetProvider {
         RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.widget_kotoba);
         String lv = Data.level(c);
         JSONArray words = Data.words(c, lv);
-        boolean arch = Data.archMode(c);
+        boolean arch = archV(c);
         int doneN = Data.done(c, lv).size();
         JSONArray w = null;
         String note = null;
         if (arch) {
             java.util.List<Integer> l = Data.archList(c, lv);
-            rv.setTextViewText(R.id.head, "Arsip " + Data.label(lv) + " · " + (l.isEmpty() ? 0 : Data.apos(c, l.size()) + 1) + "/" + l.size());
+            rv.setTextViewText(R.id.head, (Data.archMode(c) ? "Arsip " : "Hapalan ") + Data.label(lv) + " · " + (l.isEmpty() ? 0 : Data.apos(c, l.size()) + 1) + "/" + l.size());
             rv.setImageViewResource(R.id.btnArch, R.drawable.ic_archive_on);
             rv.setTextViewText(R.id.btnMid, "\u21A9");
             if (l.isEmpty()) {
@@ -105,6 +119,8 @@ public class KotobaWidget extends AppWidgetProvider {
             rv.setTextViewText(R.id.main, arch ? "-" : "\u5B8C\u4E86");
             rv.setTextViewText(R.id.sub, note == null ? "" : note);
             rv.setTextViewText(R.id.arti, arch ? "Tandai hapal untuk mengisi arsip." : "Ganti level di aplikasi.");
+            rv.setViewVisibility(R.id.exJp, View.GONE);
+            rv.setViewVisibility(R.id.exId, View.GONE);
         } else {
             String kj = w.optString(0), kana = w.optString(1), romaji = w.optString(2), arti = w.optString(3);
             rv.setTextViewText(R.id.main, kj.isEmpty() ? kana : kj);
@@ -114,6 +130,15 @@ public class KotobaWidget extends AppWidgetProvider {
             } else {
                 rv.setTextViewText(R.id.sub, "");
                 rv.setTextViewText(R.id.arti, kj.isEmpty() ? "Ketuk kartu untuk melihat bunyinya" : "Ketuk kartu untuk melihat arti");
+            }
+            // Contoh kalimat (seperti kartu hapalan di situs) ikut tampil setelah kartu dibuka.
+            String exJ = w.optString(4), exR = w.optString(5), exI = w.optString(6);
+            boolean showEx = Data.revealed(c) && exJ.length() > 0;
+            rv.setViewVisibility(R.id.exJp, showEx ? View.VISIBLE : View.GONE);
+            rv.setViewVisibility(R.id.exId, showEx ? View.VISIBLE : View.GONE);
+            if (showEx) {
+                rv.setTextViewText(R.id.exJp, exJ);
+                rv.setTextViewText(R.id.exId, (exR + (exI.length() > 0 ? "\n" + exI : "")).trim());
             }
         }
         PendingIntent flip = pi(c, A_FLIP, 1);
